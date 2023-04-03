@@ -164,7 +164,7 @@ class TabTextCtrl(ExpandoTextCtrl):
         image = tab.bitmap
 
         if image.IsOk():
-            image_w, image_h = image.GetWidth(), image.GetHeight()
+            image_w, image_h = image.GetLogicalWidth(), image.GetLogicalHeight()
             image_w += 6
 
         dc = wx.ClientDC(self._owner)
@@ -864,7 +864,7 @@ class TabNavigatorWindow(wx.Dialog):
         # Draw the caption title and place the bitmap
         # get the bitmap optimal position, and draw it
         bmpPt, txtPt = wx.Point(), wx.Point()
-        bmpPt.y = (rect.height - self._props.Icon.GetHeight())//2
+        bmpPt.y = (rect.height - self._props.Icon.GetLogicalHeight())//2
         bmpPt.x = 3
         mem_dc.DrawBitmap(self._props.Icon, bmpPt.x, bmpPt.y, True)
 
@@ -874,7 +874,7 @@ class TabNavigatorWindow(wx.Dialog):
         mem_dc.SetFont(font)
         fontHeight = mem_dc.GetCharHeight()
 
-        txtPt.x = bmpPt.x + self._props.Icon.GetWidth() + 4
+        txtPt.x = bmpPt.x + self._props.Icon.GetLogicalWidth() + 4
         txtPt.y = (rect.height - fontHeight)//2
         mem_dc.SetTextForeground(wx.WHITE)
         mem_dc.DrawText("Opened tabs:", txtPt.x, txtPt.y)
@@ -2110,6 +2110,7 @@ class AuiTabCtrl(wx.Control, AuiTabContainer):
             self._on_button = False
 
             if self._drag_image:
+                self._drag_image.Hide()
                 self._drag_image.EndDrag()
                 del self._drag_image
                 self._drag_image = None
@@ -2151,6 +2152,7 @@ class AuiTabCtrl(wx.Control, AuiTabContainer):
 
             self._is_dragging = False
             if self._drag_image:
+                self._drag_image.Hide()
                 self._drag_image.EndDrag()
                 del self._drag_image
                 self._drag_image = None
@@ -2404,6 +2406,7 @@ class AuiTabCtrl(wx.Control, AuiTabContainer):
                 self._is_dragging = True
 
                 if self._drag_image:
+                    self._drag_image.Hide()
                     self._drag_image.EndDrag()
                     del self._drag_image
                     self._drag_image = None
@@ -6142,7 +6145,7 @@ class AuiNotebook(wx.Panel):
 
             page.enabled = False
             if count == 0:
-                il = wx.ImageList(bmp.GetWidth(), bmp.GetHeight(), True)
+                il = wx.ImageList(bmp.GetLogicalWidth(), bmp.GetLogicalHeight(), True)
 
             il.Add(bmp)
             count += 1

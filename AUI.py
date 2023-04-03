@@ -1093,6 +1093,11 @@ class AuiFrame(wx.Frame):
 
         self.SetMenuBar(mb)
 
+    def GetBitmap(self, bid, size):
+        scale_factor = self.GetContentScaleFactor()
+        bmp = wx.ArtProvider.GetBitmap(bid, size=(size[0]*scale_factor, size[1]*scale_factor))
+        bmp.SetScaleFactor(scale_factor)
+        return bmp
 
     def BuildPanes(self):
 
@@ -1119,13 +1124,13 @@ class AuiFrame(wx.Frame):
         # create some toolbars
         tb1 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
                              agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW)
-        tb1.SetToolBitmapSize(wx.Size(48, 48))
-        tb1.AddSimpleTool(ID_SampleItem+1, "Test", wx.ArtProvider.GetBitmap(wx.ART_ERROR))
+        tb1.SetToolBitmapSize(wx.Size(24, 24))
+        tb1.AddSimpleTool(ID_SampleItem+1, "Test", self.GetBitmap(wx.ART_ERROR, size=(24, 24)))
         tb1.AddSeparator()
-        tb1.AddSimpleTool(ID_SampleItem+2, "Test", wx.ArtProvider.GetBitmap(wx.ART_QUESTION))
-        tb1.AddSimpleTool(ID_SampleItem+3, "Test", wx.ArtProvider.GetBitmap(wx.ART_INFORMATION))
-        tb1.AddSimpleTool(ID_SampleItem+4, "Test", wx.ArtProvider.GetBitmap(wx.ART_WARNING))
-        tb1.AddSimpleTool(ID_SampleItem+5, "Test", wx.ArtProvider.GetBitmap(wx.ART_MISSING_IMAGE))
+        tb1.AddSimpleTool(ID_SampleItem+2, "Test", self.GetBitmap(wx.ART_QUESTION, size=(24, 24)))
+        tb1.AddSimpleTool(ID_SampleItem+3, "Test", self.GetBitmap(wx.ART_INFORMATION, size=(24, 24)))
+        tb1.AddSimpleTool(ID_SampleItem+4, "Test", self.GetBitmap(wx.ART_WARNING, size=(24, 24)))
+        tb1.AddSimpleTool(ID_SampleItem+5, "Test", self.GetBitmap(wx.ART_MISSING_IMAGE, size=(24, 24)))
         tb1.SetCustomOverflowItems(prepend_items, append_items)
         tb1.Realize()
 
@@ -1133,7 +1138,7 @@ class AuiFrame(wx.Frame):
                              agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW)
         tb2.SetToolBitmapSize(wx.Size(16, 16))
 
-        tb2_bmp1 = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16, 16))
+        tb2_bmp1 = self.GetBitmap(wx.ART_QUESTION, size=(16, 16))
         tb2.AddSimpleTool(ID_SampleItem+6, "Test", tb2_bmp1)
         tb2.AddSimpleTool(ID_SampleItem+7, "Test", tb2_bmp1)
         tb2.AddSimpleTool(ID_SampleItem+8, "Test", tb2_bmp1)
@@ -1152,7 +1157,7 @@ class AuiFrame(wx.Frame):
         tb3 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
                              agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW)
         tb3.SetToolBitmapSize(wx.Size(16, 16))
-        tb3_bmp1 = wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, wx.Size(16, 16))
+        tb3_bmp1 = self.GetBitmap(wx.ART_FOLDER, size=(16, 16))
         tb3.AddSimpleTool(ID_SampleItem+16, "Check 1", tb3_bmp1, "Check 1", aui.ITEM_CHECK)
         tb3.AddSimpleTool(ID_SampleItem+17, "Check 2", tb3_bmp1, "Check 2", aui.ITEM_CHECK)
         tb3.AddSimpleTool(ID_SampleItem+18, "Check 3", tb3_bmp1, "Check 3", aui.ITEM_CHECK)
@@ -1172,7 +1177,7 @@ class AuiFrame(wx.Frame):
         tb4 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
                              agwStyle=aui.AUI_TB_OVERFLOW | aui.AUI_TB_TEXT | aui.AUI_TB_HORZ_TEXT)
         tb4.SetToolBitmapSize(wx.Size(16, 16))
-        tb4_bmp1 = wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, wx.Size(16, 16))
+        tb4_bmp1 = self.GetBitmap(wx.ART_NORMAL_FILE, size=(16, 16))
         tb4.AddSimpleTool(ID_DropDownToolbarItem, "Item 1", tb4_bmp1)
         tb4.AddSimpleTool(ID_SampleItem+23, "Item 2", tb4_bmp1)
         tb4.AddSimpleTool(ID_SampleItem+24, "Item 3", tb4_bmp1)
@@ -1192,23 +1197,23 @@ class AuiFrame(wx.Frame):
         tb5 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
                              agwStyle=aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
 
-        tb5.SetToolBitmapSize(wx.Size(48, 48))
-        tb5.AddSimpleTool(ID_SampleItem+30, "Test", wx.ArtProvider.GetBitmap(wx.ART_ERROR))
+        tb5.SetToolBitmapSize(wx.Size(24, 24))
+        tb5.AddSimpleTool(ID_SampleItem+30, "Test", self.GetBitmap(wx.ART_ERROR, size=(24, 24)))
         tb5.AddSeparator()
-        tb5.AddSimpleTool(ID_SampleItem+31, "Test", wx.ArtProvider.GetBitmap(wx.ART_QUESTION))
-        tb5.AddSimpleTool(ID_SampleItem+32, "Test", wx.ArtProvider.GetBitmap(wx.ART_INFORMATION))
-        tb5.AddSimpleTool(ID_SampleItem+33, "Test", wx.ArtProvider.GetBitmap(wx.ART_WARNING))
-        tb5.AddSimpleTool(ID_SampleItem+34, "Test", wx.ArtProvider.GetBitmap(wx.ART_MISSING_IMAGE))
+        tb5.AddSimpleTool(ID_SampleItem+31, "Test", self.GetBitmap(wx.ART_QUESTION, size=(24, 24)))
+        tb5.AddSimpleTool(ID_SampleItem+32, "Test", self.GetBitmap(wx.ART_INFORMATION, size=(24, 24)))
+        tb5.AddSimpleTool(ID_SampleItem+33, "Test", self.GetBitmap(wx.ART_WARNING, size=(24, 24)))
+        tb5.AddSimpleTool(ID_SampleItem+34, "Test", self.GetBitmap(wx.ART_MISSING_IMAGE, size=(24, 24)))
         tb5.SetCustomOverflowItems(prepend_items, append_items)
         tb5.Realize()
 
         tb6 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
                              agwStyle=aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERT_TEXT)
-        tb6.SetToolBitmapSize(wx.Size(48, 48))
-        tb6.AddSimpleTool(ID_SampleItem+35, "Clockwise 1", wx.ArtProvider.GetBitmap(wx.ART_ERROR, wx.ART_OTHER, wx.Size(16, 16)))
+        tb6.SetToolBitmapSize(wx.Size(16, 16))
+        tb6.AddSimpleTool(ID_SampleItem+35, "Clockwise 1", self.GetBitmap(wx.ART_ERROR, size=(16, 16)))
         tb6.AddSeparator()
-        tb6.AddSimpleTool(ID_SampleItem+36, "Clockwise 2", wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16, 16)))
-        tb6.AddSimpleTool(ID_DropDownToolbarItem, "Clockwise 3", wx.ArtProvider.GetBitmap(wx.ART_WARNING, wx.ART_OTHER, wx.Size(16, 16)))
+        tb6.AddSimpleTool(ID_SampleItem+36, "Clockwise 2", self.GetBitmap(wx.ART_QUESTION, size=(16, 16)))
+        tb6.AddSimpleTool(ID_DropDownToolbarItem, "Clockwise 3", self.GetBitmap(wx.ART_WARNING, size=(16, 16)))
         tb6.SetCustomOverflowItems(prepend_items, append_items)
         tb6.SetToolDropDown(ID_DropDownToolbarItem, True)
         tb6.Realize()
@@ -1603,7 +1608,7 @@ class AuiFrame(wx.Frame):
         for pane in panes:
             if checked:
                 randimage = random.randint(0, len(ArtIDs) - 1)
-                bmp = wx.ArtProvider.GetBitmap(eval(ArtIDs[randimage]), wx.ART_OTHER, (16, 16))
+                bmp = self.GetBitmap(eval(ArtIDs[randimage]), size=(16, 16))
             else:
                 bmp = None
 
@@ -2341,7 +2346,7 @@ class AuiFrame(wx.Frame):
 
             # create the popup menu
             menuPopup = wx.Menu()
-            bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16, 16))
+            bmp = self.GetBitmap(wx.ART_QUESTION, size=(16, 16))
 
             m1 =  wx.MenuItem(menuPopup, 10001, "Drop Down Item 1")
             m1.SetBitmap(bmp)
@@ -2552,8 +2557,8 @@ class AuiFrame(wx.Frame):
                            wx.TR_DEFAULT_STYLE | wx.NO_BORDER)
 
         imglist = wx.ImageList(16, 16, True, 2)
-        imglist.Add(wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, wx.Size(16, 16)))
-        imglist.Add(wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, wx.Size(16, 16)))
+        imglist.Add(self.GetBitmap(wx.ART_FOLDER,  size=(16, 16)))
+        imglist.Add(self.GetBitmap(wx.ART_NORMAL_FILE, size=(16, 16)))
         tree.AssignImageList(imglist)
 
         root = tree.AddRoot("AUI Project", 0)
@@ -2606,7 +2611,7 @@ class AuiFrame(wx.Frame):
         art = arts[self._notebook_theme]()
         ctrl.SetArtProvider(art)
 
-        page_bmp = wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, wx.Size(16, 16))
+        page_bmp = self.GetBitmap(wx.ART_NORMAL_FILE, size=(16, 16))
         ctrl.AddPage(self.CreateHTMLCtrl(ctrl), "Welcome to AUI", False, page_bmp)
 
         panel = wx.Panel(ctrl, -1)

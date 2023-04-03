@@ -326,7 +326,9 @@ def DarkenBitmap(bmp, caption_colour, new_colour):
     green = caption_colour.Green()/new_colour.Green()
     blue = caption_colour.Blue()/new_colour.Blue()
     image = image.AdjustChannels(red, green, blue)
-    return image.ConvertToBitmap()
+    bmp_darken = image.ConvertToBitmap()
+    bmp_darken.SetScaleFactor(bmp.GetScaleFactor())
+    return bmp_darken
 
 
 def DrawGradientRectangle(dc, rect, start_colour, end_colour, direction, offset=0, length=0):
@@ -443,13 +445,12 @@ class TabDragImage(wx.DragImage):
         tab_width, tab_height = tab_size
         rect = wx.Rect(0, 0, tab_width, tab_height)
 
-        bitmap = wx.Bitmap(tab_width+1, tab_height+1)
+        scale_factor = notebook.GetDPIScaleFactor()
+        bitmap = wx.Bitmap(tab_width*scale_factor+1, tab_height*scale_factor+1)
+        bitmap.SetScaleFactor(scale_factor)
         memory.SelectObject(bitmap)
 
-        if wx.Platform == "__WXMAC__":
-            memory.SetBackground(wx.TRANSPARENT_BRUSH)
-        else:
-            memory.SetBackground(wx.Brush(self._backgroundColour))
+        memory.SetBackground(wx.Brush(self._backgroundColour))
 
         memory.SetBackgroundMode(wx.TRANSPARENT)
         memory.Clear()
@@ -466,29 +467,29 @@ class TabDragImage(wx.DragImage):
         # Gtk and Windows unfortunately don't do so well with transparent
         # drawing so this hack corrects the image to have a transparent
         # background.
-        if wx.Platform != '__WXMAC__':
-            timg = bitmap.ConvertToImage()
-            if not timg.HasAlpha():
-                timg.InitAlpha()
-            ## for y in range(timg.GetHeight()):
-            ##     for x in range(timg.GetWidth()):
-            ##         pix = wx.Colour(timg.GetRed(x, y),
-            ##                         timg.GetGreen(x, y),
-            ##                         timg.GetBlue(x, y))
-            ##         if pix == self._backgroundColour:
-            ##             timg.SetAlpha(x, y, 0)
-            # local opt list comprehension
-            wxColour = wx.Colour
-            GetRed = timg.GetRed
-            GetGreen = timg.GetGreen
-            GetBlue = timg.GetBlue
-            SetAlpha = timg.SetAlpha
-            _backgroundColour = self._backgroundColour
-            [SetAlpha(x, y, 0)
-                for x in range(timg.GetWidth())
-                    for y in range(timg.GetHeight())
-                        if wxColour(GetRed(x, y), GetGreen(x, y), GetBlue(x, y)) == _backgroundColour]
-            bitmap = timg.ConvertToBitmap()
+        timg = bitmap.ConvertToImage()
+        if not timg.HasAlpha():
+            timg.InitAlpha()
+        ## for y in range(timg.GetHeight()):
+        ##     for x in range(timg.GetWidth()):
+        ##         pix = wx.Colour(timg.GetRed(x, y),
+        ##                         timg.GetGreen(x, y),
+        ##                         timg.GetBlue(x, y))
+        ##         if pix == self._backgroundColour:
+        ##             timg.SetAlpha(x, y, 0)
+        # local opt list comprehension
+        wxColour = wx.Colour
+        GetRed = timg.GetRed
+        GetGreen = timg.GetGreen
+        GetBlue = timg.GetBlue
+        SetAlpha = timg.SetAlpha
+        _backgroundColour = self._backgroundColour
+        [SetAlpha(x, y, 0)
+            for x in range(timg.GetWidth())
+                for y in range(timg.GetHeight())
+                    if wxColour(GetRed(x, y), GetGreen(x, y), GetBlue(x, y)) == _backgroundColour]
+        bitmap = timg.ConvertToBitmap()
+        bitmap.SetScaleFactor(scale_factor)
         return bitmap
 
 
@@ -577,7 +578,7 @@ def RescaleScreenShot(bmp, thumbnail_size=200):
     :param integer `thumbnail_size`: the maximum size of every page thumbnail.
     """
 
-    bmpW, bmpH = bmp.GetWidth(), bmp.GetHeight()
+    bmpW, bmpH = bmp.GetLogicalWidth(), bmp.GetLogicalHeight()
     img = bmp.ConvertToImage()
 
     newW, newH = bmpW, bmpH

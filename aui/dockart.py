@@ -561,9 +561,10 @@ class AuiDefaultDockArt(object):
         if pane.icon.IsOk():
             if pane.HasCaptionLeft():
                 bmp = wx.Bitmap(pane.icon).ConvertToImage().Rotate90(clockwise=False)
-                dc.DrawBitmap(bmp.ConvertToBitmap(), rect.x+(rect.width-pane.icon.GetWidth())//2, rect.y+rect.height-2-pane.icon.GetHeight(), True)
+                bmp.SetScaleFactor(pane.icon.GetScaleFactor())
+                dc.DrawBitmap(bmp.ConvertToBitmap(), rect.x+(rect.width-pane.icon.GetLogicalWidth())//2, rect.y+rect.height-2-pane.icon.GetLogicalHeight(), True)
             else:
-                dc.DrawBitmap(pane.icon, rect.x+2, rect.y+(rect.height-pane.icon.GetHeight())//2, True)
+                dc.DrawBitmap(pane.icon, rect.x+2, rect.y+(rect.height-pane.icon.GetLogicalHeight())//2, True)
 
 
     def DrawCaption(self, dc, window, text, rect, pane):
@@ -601,9 +602,9 @@ class AuiDefaultDockArt(object):
         caption_offset = 0
         if pane.icon:
             if captionLeft:
-                caption_offset += pane.icon.GetHeight() + 3
+                caption_offset += pane.icon.GetLogicalHeight() + 3
             else:
-                caption_offset += pane.icon.GetWidth() + 3
+                caption_offset += pane.icon.GetLogicalWidth() + 3
 
             self.DrawIcon(dc, rect, pane)
 
@@ -744,10 +745,10 @@ class AuiDefaultDockArt(object):
 
         if isVertical:
             old_x = rect.x
-            rect.x = rect.x + (rect.width//2) - (bmp.GetWidth()//2)
+            rect.x = rect.x + (rect.width//2) - (bmp.GetLogicalWidth()//2)
             rect.width = old_x + rect.width - rect.x - 1
         else:
-            rect.y = rect.y + (rect.height//2) - (bmp.GetHeight()//2)
+            rect.y = rect.y + (rect.height//2) - (bmp.GetLogicalHeight()//2)
 
         if button_state == AUI_BUTTON_STATE_PRESSED:
             rect.x += 1
@@ -773,7 +774,9 @@ class AuiDefaultDockArt(object):
                 bmp = DarkenBitmap(bmp, self._active_caption_colour, StepColour(self._active_caption_colour, 110))
 
         if isVertical:
-             bmp = wx.Bitmap(bmp).ConvertToImage().Rotate90(clockwise=False).ConvertToBitmap()
+            scale_factor = bmp.GetScaleFactor()
+            bmp = wx.Bitmap(bmp).ConvertToImage().Rotate90(clockwise=False).ConvertToBitmap()
+            bmp.SetScaleFactor(scale_factor)
 
         # draw the button itself
         dc.DrawBitmap(bmp, rect.x, rect.y, True)
@@ -874,7 +877,7 @@ class AuiDefaultDockArt(object):
         :param bool `maximize`: used to distinguish between the maximize and restore bitmaps.
         """
 
-        if bmp.GetWidth() > 16 or bmp.GetHeight() > 16:
+        if bmp.GetLogicalWidth() > 16 or bmp.GetLogicalHeight() > 16:
             raise Exception("The input bitmap is too big")
 
         if button == AUI_BUTTON_CLOSE:
@@ -1020,9 +1023,9 @@ class ModernDockArt(AuiDefaultDockArt):
         caption_offset = 0
         if pane.icon:
             if captionLeft:
-                caption_offset += pane.icon.GetHeight() + 3
+                caption_offset += pane.icon.GetLogicalHeight() + 3
             else:
-                caption_offset += pane.icon.GetWidth() + 3
+                caption_offset += pane.icon.GetLogicalWidth() + 3
 
             self.DrawIcon(dc, rect, pane)
 

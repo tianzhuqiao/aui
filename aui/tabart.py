@@ -296,9 +296,9 @@ class AuiDefaultTabArt(object):
         agwFlags = self.GetAGWFlags()
 
         if agwFlags & AUI_NB_CLOSE_BUTTON:
-            tot_width -= self._active_close_bmp.GetWidth()
+            tot_width -= self._active_close_bmp.GetLogicalWidth()
         if agwFlags & AUI_NB_WINDOWLIST_BUTTON:
-            tot_width -= self._active_windowlist_bmp.GetWidth()
+            tot_width -= self._active_windowlist_bmp.GetLogicalWidth()
 
         if tab_count > 0:
             self._fixed_tab_width = tot_width//tab_count
@@ -539,7 +539,7 @@ class AuiDefaultTabArt(object):
         close_button_width = 0
 
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 text_offset += close_button_width - 5
@@ -555,10 +555,10 @@ class AuiDefaultTabArt(object):
             # draw bitmap
             dc.DrawBitmap(pagebitmap,
                           bitmap_offset,
-                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetHeight()//2),
+                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetLogicalHeight()//2),
                           True)
 
-            text_offset = bitmap_offset + pagebitmap.GetWidth()
+            text_offset = bitmap_offset + pagebitmap.GetLogicalWidth()
             text_offset += 3 # bitmap padding
 
         else:
@@ -609,11 +609,11 @@ class AuiDefaultTabArt(object):
             shift = (agwFlags & AUI_NB_BOTTOM and [1] or [0])[0]
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
-                rect = wx.Rect(tab_x + 4, tab_y + (tab_height - bmp.GetHeight())//2 - shift,
+                rect = wx.Rect(tab_x + 4, tab_y + (tab_height - bmp.GetLogicalHeight())//2 - shift,
                                close_button_width, tab_height)
             else:
                 rect = wx.Rect(tab_x + tab_width - close_button_width - 1,
-                               tab_y + (tab_height - bmp.GetHeight())//2 - shift,
+                               tab_y + (tab_height - bmp.GetLogicalHeight())//2 - shift,
                                close_button_width, tab_height)
 
             rect = IndentPressedBitmap(rect, close_button_state)
@@ -698,13 +698,13 @@ class AuiDefaultTabArt(object):
 
         # if the close button is showing, add space for it
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
-            tab_width += self._active_close_bmp.GetWidth() + 3
+            tab_width += self._active_close_bmp.GetLogicalWidth() + 3
 
         # if there's a bitmap, add space for it
         if bitmap.IsOk():
-            tab_width += bitmap.GetWidth()
+            tab_width += bitmap.GetLogicalWidth()
             tab_width += 3 # right side bitmap padding
-            tab_height = max(tab_height, bitmap.GetHeight())
+            tab_height = max(tab_height, bitmap.GetLogicalHeight())
 
         # add padding
         tab_width += 16
@@ -777,15 +777,15 @@ class AuiDefaultTabArt(object):
         if orientation == wx.LEFT:
 
             rect.SetX(in_rect.x)
-            rect.SetY(((in_rect.y + in_rect.height)//2) - (bmp.GetHeight()//2))
-            rect.SetWidth(bmp.GetWidth())
-            rect.SetHeight(bmp.GetHeight())
+            rect.SetY(((in_rect.y + in_rect.height)//2) - (bmp.GetLogicalHeight()//2))
+            rect.SetWidth(bmp.GetLogicalWidth())
+            rect.SetHeight(bmp.GetLogicalHeight())
 
         else:
 
-            rect = wx.Rect(in_rect.x + in_rect.width - bmp.GetWidth(),
-                           ((in_rect.y + in_rect.height)//2) - (bmp.GetHeight()//2),
-                           bmp.GetWidth(), bmp.GetHeight())
+            rect = wx.Rect(in_rect.x + in_rect.width - bmp.GetLogicalWidth(),
+                           ((in_rect.y + in_rect.height)//2) - (bmp.GetLogicalHeight()//2),
+                           bmp.GetLogicalWidth(), bmp.GetLogicalHeight())
 
         rect = IndentPressedBitmap(rect, button_state)
         dc.DrawBitmap(bmp, rect.x, rect.y, True)
@@ -823,8 +823,8 @@ class AuiDefaultTabArt(object):
                                     textx, texty)
 
             if page.bitmap.IsOk():
-                focusRectBitmap = wx.Rect(bitmap_offset, drawn_tab_yoff + (drawn_tab_height//2) - (page.bitmap.GetHeight()//2),
-                                          page.bitmap.GetWidth(), page.bitmap.GetHeight())
+                focusRectBitmap = wx.Rect(bitmap_offset, drawn_tab_yoff + (drawn_tab_height//2) - (page.bitmap.GetLogicalHeight()//2),
+                                          page.bitmap.GetLogicalWidth(), page.bitmap.GetLogicalHeight())
 
             if page.bitmap.IsOk() and draw_text == "":
                 focusRect = wx.Rect(*focusRectBitmap)
@@ -1105,9 +1105,9 @@ class AuiSimpleTabArt(object):
         tot_width = tab_ctrl_size.x - self.GetIndentSize() - 4
 
         if self._agwFlags & AUI_NB_CLOSE_BUTTON:
-            tot_width -= self._active_close_bmp.GetWidth()
+            tot_width -= self._active_close_bmp.GetLogicalWidth()
         if self._agwFlags & AUI_NB_WINDOWLIST_BUTTON:
-            tot_width -= self._active_windowlist_bmp.GetWidth()
+            tot_width -= self._active_windowlist_bmp.GetLogicalWidth()
 
         if tab_count > 0:
             self._fixed_tab_width = tot_width//tab_count
@@ -1235,7 +1235,7 @@ class AuiSimpleTabArt(object):
 
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
 
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 if control:
                     text_offset = tab_x + (tab_height//2) + close_button_width - (textx//2) - 2
@@ -1310,11 +1310,11 @@ class AuiSimpleTabArt(object):
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 rect = wx.Rect(tab_x + tab_height - 2,
-                               tab_y + (tab_height//2) - (bmp.GetHeight()//2) + 1,
+                               tab_y + (tab_height//2) - (bmp.GetLogicalHeight()//2) + 1,
                                close_button_width, tab_height - 1)
             else:
                 rect = wx.Rect(tab_x + tab_width - close_button_width - 1,
-                               tab_y + (tab_height//2) - (bmp.GetHeight()//2) + 1,
+                               tab_y + (tab_height//2) - (bmp.GetLogicalHeight()//2) + 1,
                                close_button_width, tab_height - 1)
 
             self.DrawButtons(dc, rect, bmp, wx.WHITE, close_button_state)
@@ -1380,7 +1380,7 @@ class AuiSimpleTabArt(object):
         tab_width = measured_textx + tab_height + 5
 
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
-            tab_width += self._active_close_bmp.GetWidth()
+            tab_width += self._active_close_bmp.GetLogicalWidth()
 
         if self._agwFlags & AUI_NB_TAB_FIXED_WIDTH:
             tab_width = self._fixed_tab_width
@@ -1445,15 +1445,15 @@ class AuiSimpleTabArt(object):
         if orientation == wx.LEFT:
 
             rect.SetX(in_rect.x)
-            rect.SetY(((in_rect.y + in_rect.height)//2) - (bmp.GetHeight()//2))
-            rect.SetWidth(bmp.GetWidth())
-            rect.SetHeight(bmp.GetHeight())
+            rect.SetY(((in_rect.y + in_rect.height)//2) - (bmp.GetLogicalHeight()//2))
+            rect.SetWidth(bmp.GetLogicalWidth())
+            rect.SetHeight(bmp.GetLogicalHeight())
 
         else:
 
-            rect = wx.Rect(in_rect.x + in_rect.width - bmp.GetWidth(),
-                           ((in_rect.y + in_rect.height)//2) - (bmp.GetHeight()//2),
-                           bmp.GetWidth(), bmp.GetHeight())
+            rect = wx.Rect(in_rect.x + in_rect.width - bmp.GetLogicalWidth(),
+                           ((in_rect.y + in_rect.height)//2) - (bmp.GetLogicalHeight()//2),
+                           bmp.GetLogicalWidth(), bmp.GetLogicalHeight())
 
         self.DrawButtons(dc, rect, bmp, wx.WHITE, button_state)
 
@@ -1730,7 +1730,7 @@ class VC71TabArt(AuiDefaultTabArt):
         close_button_width = 0
 
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 text_offset += close_button_width - 5
 
@@ -1746,6 +1746,7 @@ class VC71TabArt(AuiDefaultTabArt):
             shift = (page.active and [1] or [2])[0]
 
         bitmap_offset = 0
+
         if pagebitmap.IsOk():
             bitmap_offset = tab_x + 8
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT and close_button_width:
@@ -1753,10 +1754,10 @@ class VC71TabArt(AuiDefaultTabArt):
 
             # draw bitmap
             dc.DrawBitmap(pagebitmap, bitmap_offset,
-                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetHeight()//2) + shift,
+                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetLogicalHeight()//2) + shift,
                           True)
 
-            text_offset = bitmap_offset + pagebitmap.GetWidth()
+            text_offset = bitmap_offset + pagebitmap.GetLogicalWidth()
             text_offset += 3 # bitmap padding
 
         else:
@@ -1810,7 +1811,7 @@ class VC71TabArt(AuiDefaultTabArt):
 
         # draw 'x' on tab (if enabled)
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
 
             bmp = self._disabled_close_bmp
 
@@ -1821,11 +1822,11 @@ class VC71TabArt(AuiDefaultTabArt):
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 rect = wx.Rect(tab_x + 4,
-                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetHeight() // 2) + shift,
+                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetLogicalHeight() // 2) + shift,
                                close_button_width, tab_height)
             else:
                 rect = wx.Rect(tab_x + tab_width - close_button_width - 3,
-                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetHeight() // 2) + shift,
+                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetLogicalHeight() // 2) + shift,
                                close_button_width, tab_height)
 
             # Indent the button if it is pressed down:
@@ -1965,7 +1966,7 @@ class FF2TabArt(AuiDefaultTabArt):
         text_offset = tab_x + 8
         close_button_width = 0
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 text_offset += close_button_width - 4
 
@@ -1988,10 +1989,10 @@ class FF2TabArt(AuiDefaultTabArt):
 
             # draw bitmap
             dc.DrawBitmap(pagebitmap, bitmap_offset,
-                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetHeight()//2) + shift,
+                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetLogicalHeight()//2) + shift,
                           True)
 
-            text_offset = bitmap_offset + pagebitmap.GetWidth()
+            text_offset = bitmap_offset + pagebitmap.GetLogicalWidth()
             text_offset += 3 # bitmap padding
 
         else:
@@ -2048,7 +2049,7 @@ class FF2TabArt(AuiDefaultTabArt):
         # draw 'x' on tab (if enabled)
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
 
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
             bmp = self._disabled_close_bmp
 
             if close_button_state == AUI_BUTTON_STATE_HOVER:
@@ -2058,11 +2059,11 @@ class FF2TabArt(AuiDefaultTabArt):
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 rect = wx.Rect(tab_x + 5,
-                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetHeight() // 2) + shift,
+                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetLogicalHeight() // 2) + shift,
                                close_button_width, tab_height)
             else:
                 rect = wx.Rect(tab_x + tab_width - close_button_width - 3,
-                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetHeight() // 2) + shift,
+                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetLogicalHeight() // 2) + shift,
                                close_button_width, tab_height)
 
             # Indent the button if it is pressed down:
@@ -2301,7 +2302,7 @@ class VC8TabArt(AuiDefaultTabArt):
         text_offset = tab_x + 20
         close_button_width = 0
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 text_offset += close_button_width
 
@@ -2324,10 +2325,10 @@ class VC8TabArt(AuiDefaultTabArt):
 
             # draw bitmap
             dc.DrawBitmap(pagebitmap, bitmap_offset,
-                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetHeight()//2) + shift,
+                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetLogicalHeight()//2) + shift,
                           True)
 
-            text_offset = bitmap_offset + pagebitmap.GetWidth()
+            text_offset = bitmap_offset + pagebitmap.GetLogicalWidth()
             text_offset += 3 # bitmap padding
 
         else:
@@ -2383,7 +2384,7 @@ class VC8TabArt(AuiDefaultTabArt):
         # draw 'x' on tab (if enabled)
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
 
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
             bmp = self._disabled_close_bmp
 
             if close_button_state == AUI_BUTTON_STATE_HOVER:
@@ -2398,11 +2399,11 @@ class VC8TabArt(AuiDefaultTabArt):
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 rect = wx.Rect(tab_x + 20,
-                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetHeight() // 2) + shift,
+                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetLogicalHeight() // 2) + shift,
                                close_button_width, tab_height)
             else:
                 rect = wx.Rect(xpos,
-                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetHeight() // 2) + shift,
+                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetLogicalHeight() // 2) + shift,
                                close_button_width, tab_height)
 
             # Indent the button if it is pressed down:
@@ -2596,10 +2597,10 @@ class ChromeTabArt(AuiDefaultTabArt):
         tab_width, tab_height = tab_size
 
         # add some padding
-        tab_width += self._leftActiveBmp.GetWidth()
+        tab_width += self._leftActiveBmp.GetLogicalWidth()
         tab_height += 2
 
-        tab_height = max(tab_height, self._centerActiveBmp.GetHeight())
+        tab_height = max(tab_height, self._centerActiveBmp.GetLogicalHeight())
 
         return (tab_width, tab_height), x_extent
 
@@ -2667,7 +2668,7 @@ class ChromeTabArt(AuiDefaultTabArt):
 
         close_button_width = 0
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 text_offset += close_button_width
 
@@ -2686,10 +2687,10 @@ class ChromeTabArt(AuiDefaultTabArt):
 
             # draw bitmap
             dc.DrawBitmap(pagebitmap, bitmap_offset,
-                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetHeight()//2),
+                          drawn_tab_yoff + (drawn_tab_height//2) - (pagebitmap.GetLogicalHeight()//2),
                           True)
 
-            text_offset = bitmap_offset + pagebitmap.GetWidth()
+            text_offset = bitmap_offset + pagebitmap.GetLogicalWidth()
             text_offset += 3 # bitmap padding
 
         else:
@@ -2738,7 +2739,7 @@ class ChromeTabArt(AuiDefaultTabArt):
         # draw 'x' on tab (if enabled)
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
 
-            close_button_width = self._active_close_bmp.GetWidth()
+            close_button_width = self._active_close_bmp.GetLogicalWidth()
             bmp = self._disabled_close_bmp
 
             if close_button_state == AUI_BUTTON_STATE_HOVER:
@@ -2748,11 +2749,11 @@ class ChromeTabArt(AuiDefaultTabArt):
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 rect = wx.Rect(tab_x + leftw - 2,
-                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetHeight() // 2) + 1,
+                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetLogicalHeight() // 2) + 1,
                                close_button_width, tab_height)
             else:
                 rect = wx.Rect(tab_x + tab_width - close_button_width - rightw + 2,
-                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetHeight() // 2) + 1,
+                               drawn_tab_yoff + (drawn_tab_height // 2) - (bmp.GetLogicalHeight() // 2) + 1,
                                close_button_width, tab_height)
 
             if agwFlags & AUI_NB_BOTTOM:

@@ -563,6 +563,7 @@ class AuiToolBarItem(object):
 
         if not rotated_bitmap.IsOk():
             rotated_bitmap = wx.Bitmap(bitmap_to_rotate.ConvertToImage().Rotate90(clockwise))
+            rotated_bitmap.SetScaleFactor(bitmap_to_rotate.GetScaleFactor())
 
         return rotated_bitmap
 
@@ -1079,8 +1080,8 @@ class AuiDefaultToolBarArt(object):
             button_rect = wx.Rect(rect.x, rect.y, rect.width, rect.height-BUTTON_DROPDOWN_WIDTH)
             dropdown_rect = wx.Rect(rect.x, rect.y+rect.height-BUTTON_DROPDOWN_WIDTH-1, rect.width, BUTTON_DROPDOWN_WIDTH+1)
 
-        dropbmp_width = self._button_dropdown_bmp.GetWidth()
-        dropbmp_height = self._button_dropdown_bmp.GetHeight()
+        dropbmp_width = self._button_dropdown_bmp.GetLogicalWidth()
+        dropbmp_height = self._button_dropdown_bmp.GetLogicalHeight()
         if not horizontal:
             tmp = dropbmp_width
             dropbmp_width = dropbmp_height
@@ -1205,8 +1206,8 @@ class AuiDefaultToolBarArt(object):
         if not item.GetBitmap().IsOk() and not self._agwFlags & AUI_TB_TEXT:
             return wx.Size(16, 16)
 
-        width = item.GetBitmap().GetWidth()
-        height = item.GetBitmap().GetHeight()
+        width = item.GetBitmap().GetLogicalWidth()
+        height = item.GetBitmap().GetLogicalHeight()
 
         if self._agwFlags & AUI_TB_TEXT:
 
@@ -1359,8 +1360,8 @@ class AuiDefaultToolBarArt(object):
                 dc.SetBrush(wx.Brush(light_gray_bg))
                 dc.DrawRectangle(rect.x+1, rect.y, rect.width, rect.height)
 
-        x = rect.x + 1 + (rect.width-self._overflow_bmp.GetWidth())//2
-        y = rect.y + 1 + (rect.height-self._overflow_bmp.GetHeight())//2
+        x = rect.x + 1 + (rect.width-self._overflow_bmp.GetLogicalWidth())//2
+        y = rect.y + 1 + (rect.height-self._overflow_bmp.GetLogicalHeight())//2
         dc.DrawBitmap(self._overflow_bmp, x, y, True)
 
 
@@ -1480,8 +1481,8 @@ class AuiDefaultToolBarArt(object):
         horizontal = self._orientation == AUI_TBTOOL_HORIZONTAL
         text_bottom = self._text_orientation == AUI_TBTOOL_TEXT_BOTTOM
         text_right = self._text_orientation == AUI_TBTOOL_TEXT_RIGHT
-        bmp_width = item.GetBitmap().GetWidth()
-        bmp_height = item.GetBitmap().GetHeight()
+        bmp_width = item.GetBitmap().GetLogicalWidth()
+        bmp_height = item.GetBitmap().GetLogicalHeight()
 
         if self._agwFlags & AUI_TB_TEXT:
             dc.SetFont(self._font)

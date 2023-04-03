@@ -2518,7 +2518,7 @@ class AuiCenterDockingGuide(AuiDockingGuide):
             dc.DrawBitmap(self._aeroBmp, 0, 0, True)
             if not self._valid:
                 diff = (self._useAero == 2 and [1] or [0])[0]
-                bmpX, bmpY = self._deniedBitmap.GetWidth(), self._deniedBitmap.GetHeight()
+                bmpX, bmpY = self._deniedBitmap.GetLogicalWidth(), self._deniedBitmap.GetLabelHeight()
                 xPos, yPos = (rect.x + (rect.width) // 2 - bmpX // 2), (rect.y + (rect.height) // 2 - bmpY // 2)
                 dc.DrawBitmap(self._deniedBitmap, xPos + 1, yPos + diff, True)
 
@@ -9854,7 +9854,7 @@ class AuiManager(wx.EvtHandler):
 
             if posMask == AUI_MINIMIZE_POS_TOOLBAR:
                 xsize, ysize = minimize_toolbar.GetToolBitmapSize()
-                if xsize != restore_bitmap.GetWidth():
+                if xsize != restore_bitmap.GetLogicalWidth():
                     img = restore_bitmap.ConvertToImage()
                     img.Rescale(xsize, ysize, wx.IMAGE_QUALITY_HIGH)
                     restore_bitmap = img.ConvertToBitmap()

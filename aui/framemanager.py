@@ -4205,6 +4205,8 @@ class AuiManager(wx.EvtHandler):
         """
 
         for paneInfo in panes:
+            if paneInfo.IsNotebookPage():
+                continue
             if paneInfo.IsDocked() and paneInfo.IsShown() and paneInfo.rect.Contains(pt):
                 return paneInfo
 

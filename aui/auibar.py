@@ -755,23 +755,11 @@ class AuiDefaultToolBarArt(object):
 
         self._agwFlags = 0
         self._text_orientation = AUI_TBTOOL_TEXT_BOTTOM
-        self._highlight_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
 
         self._separator_size = 7
         self._orientation = AUI_TBTOOL_HORIZONTAL
         self._gripper_size = 7
         self._overflow_size = 16
-
-        button_dropdown_bits = b"\xe0\xf1\xfb"
-        overflow_bits = b"\x80\xff\x80\xc1\xe3\xf7"
-
-        self._button_dropdown_bmp = BitmapFromBits(button_dropdown_bits, 5, 3, wx.BLACK)
-        self._disabled_button_dropdown_bmp = BitmapFromBits(button_dropdown_bits, 5, 3,
-                                                            wx.Colour(128, 128, 128))
-        self._overflow_bmp = BitmapFromBits(overflow_bits, 7, 6, wx.BLACK)
-        self._disabled_overflow_bmp = BitmapFromBits(overflow_bits, 7, 6, wx.Colour(128, 128, 128))
-
-        self._font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
 
 
     def SetDefaultColours(self, base_colour=None):
@@ -792,7 +780,22 @@ class AuiDefaultToolBarArt(object):
 
         self._gripper_pen1 = wx.Pen(darker5_colour)
         self._gripper_pen2 = wx.Pen(darker3_colour)
-        self._gripper_pen3 = wx.WHITE_PEN
+        self._gripper_pen3 = wx.Pen(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+
+        self._highlight_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+
+        button_dropdown_bits = b"\xe0\xf1\xfb"
+        overflow_bits = b"\x80\xff\x80\xc1\xe3\xf7"
+
+        active_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        disabled_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        self._button_dropdown_bmp = BitmapFromBits(button_dropdown_bits, 5, 3, active_colour)
+        self._disabled_button_dropdown_bmp = BitmapFromBits(button_dropdown_bits, 5, 3,
+                                                            disabled_colour)
+        self._overflow_bmp = BitmapFromBits(overflow_bits, 7, 6, active_colour)
+        self._disabled_overflow_bmp = BitmapFromBits(overflow_bits, 7, 6, disabled_colour)
+
+        self._font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
 
 
     def Clone(self):
@@ -1621,7 +1624,11 @@ class AuiToolBar(wx.Control):
         self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeaveWindow)
         self.Bind(wx.EVT_SET_CURSOR, self.OnSetCursor)
+        self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChanged)
 
+    def OnSysColourChanged(self, event):
+        event.Skip()
+        self._art.SetDefaultColours()
 
     def SetWindowStyleFlag(self, style):
         """

@@ -114,7 +114,7 @@ from . import tabmdi
 from . import dockart
 from . import tabart
 
-from .aui_utilities import Clip, PaneCreateStippleBitmap, GetDockingImage, GetSlidingPoints
+from .aui_utilities import Clip, PaneCreateStippleBitmap, GetDockingImage, GetSlidingPoints, StepColour
 
 from .aui_constants import *
 
@@ -1859,6 +1859,9 @@ class AuiDockingGuideWindow(wx.Window):
         :param `dc`: a :class:`wx.DC` device context object.
         """
 
+        colourTargetBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+        colourTargetShade = StepColour(colourTargetBackground, 110)
+        colourTargetBorder = StepColour(colourTargetBackground, 120)
         rect = self.GetClientRect()
 
         dc.SetPen(wx.TRANSPARENT_PEN)
@@ -1958,9 +1961,9 @@ class AuiDockingGuideWindow(wx.Window):
             rect.Deflate(1, 1)
             point = rect.GetTopLeft()
             length = rect.width
-
-        dc.GradientFillLinear(rect, colourIconDockingPart1,
-                              colourIconDockingPart2, self._direction)
+        if self._direction != wx.CENTER:
+            dc.GradientFillLinear(rect, colourIconDockingPart1,
+                                  colourIconDockingPart2, self._direction)
 
         dc.SetPen(wx.Pen(colourIconBorder))
 
@@ -2010,13 +2013,18 @@ class AuiDockingGuideWindow(wx.Window):
         point.y += ry.y * 3
 
         dc.SetPen(wx.Pen(colourIconArrow))
+        dc.SetBrush(wx.Brush(colourIconArrow))
+        points = [wx.Point() for i in range(4)]
+        points[0].x = point.x
+        points[0].y = point.y
 
-        for i in range(4):
-            pt1 = wx.Point(point.x - rx.x * i, point.y - rx.y * i)
-            pt2 = wx.Point(point.x + rx.x * (i + 1), point.y + rx.y * (i + 1))
-            dc.DrawLine(pt1, pt2)
-            point.x += ry.x
-            point.y += ry.y
+        points[1].x = point.x + ry.x*3 - rx.x*3
+        points[1].y = point.y + ry.y*3 - rx.y*3
+
+        points[2].x = point.x + ry.x*3 + rx.x*3
+        points[2].y = point.y + ry.y*3 + rx.y*3
+        points[3] = points[0]
+        dc.DrawPolygon(points)
 
     def OnPaint(self, event):
         """
@@ -2029,7 +2037,6 @@ class AuiDockingGuideWindow(wx.Window):
         if self._currentImage.IsOk() and self._valid:
             dc.DrawBitmap(self._currentImage, 0, 0, True)
         else:
-            dc = wx.AutoBufferedPaintDC(self)
             self.Draw(dc)
 
     def Draw(self, dc):
@@ -2502,6 +2509,8 @@ class AuiCenterDockingGuide(AuiDockingGuide):
         :param `event`: a :class:`PaintEvent` to be processed.
         """
 
+        colourTargetBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+        colourTargetBorder = StepColour(colourTargetBackground, 120)
         dc = wx.AutoBufferedPaintDC(self)
 
         if self._useAero:
@@ -9059,6 +9068,7 @@ class AuiManager(wx.EvtHandler):
         if self._frame:
             self.Update()
             self._frame.Refresh()
+        event.Skip()
 
     def OnChildFocus(self, event):
         """
@@ -10292,7 +10302,7 @@ class AuiManager(wx.EvtHandler):
 
         startX, startY, stopX, stopY = GetSlidingPoints(self._sliding_rect, size, self._sliding_direction)
 
-        step = stopX // 10
+        step = max(1, stopX // 10)
         window_size = 0
 
         for i in range(0, stopX, step):
@@ -10321,9 +10331,8 @@ class AuiManager(wx.EvtHandler):
 
         startX, startY, stopX, stopY = GetSlidingPoints(self._sliding_rect, size, self._sliding_direction)
 
-        step = stopX // 10
+        step = max(1, stopX // 10)
         window_size = 0
-
         for i in range(stopX, 0, -step):
             window_size = i
             self._sliding_frame.SetSize(startX, startY, window_size, stopY)

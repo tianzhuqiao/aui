@@ -30,14 +30,6 @@ __date__ = "31 March 2009"
 
 import wx
 
-if wx.Platform == '__WXMAC__':
-    try:
-        import Carbon.Appearance
-    except ImportError:
-        CARBON = False
-    else:
-        CARBON = True
-
 from .aui_utilities import BitmapFromBits, StepColour, IndentPressedBitmap, ChopText
 from .aui_utilities import GetBaseColour, DrawMACCloseButton, LightColour, TakeScreenShot
 from .aui_utilities import CopyAttributes
@@ -136,45 +128,6 @@ class AuiDefaultTabArt(object):
 
         self.SetDefaultColours()
 
-        active_colour, disabled_colour = wx.BLACK, wx.Colour(128, 128, 128)
-
-        if wx.Platform == "__WXMAC__":
-            bmp_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DDKSHADOW)
-            self._active_close_bmp = DrawMACCloseButton(bmp_colour)
-            self._disabled_close_bmp = DrawMACCloseButton(disabled_colour)
-        else:
-            self._active_close_bmp = BitmapFromBits(nb_close_bits, 16, 16, active_colour)
-            self._disabled_close_bmp = BitmapFromBits(nb_close_bits, 16, 16, disabled_colour)
-
-        self._hover_close_bmp = self._active_close_bmp
-        self._pressed_close_bmp = self._active_close_bmp
-
-        self._active_left_bmp = BitmapFromBits(nb_left_bits, 16, 16, active_colour)
-        self._disabled_left_bmp = BitmapFromBits(nb_left_bits, 16, 16, disabled_colour)
-
-        self._active_right_bmp = BitmapFromBits(nb_right_bits, 16, 16, active_colour)
-        self._disabled_right_bmp = BitmapFromBits(nb_right_bits, 16, 16, disabled_colour)
-
-        self._active_windowlist_bmp = BitmapFromBits(nb_list_bits, 16, 16, active_colour)
-        self._disabled_windowlist_bmp = BitmapFromBits(nb_list_bits, 16, 16, disabled_colour)
-
-        if wx.Platform == "__WXMAC__":
-            k = Carbon.Appearance.kThemeBrushFocusHighlight if CARBON else 19
-            # Get proper highlight colour for focus rectangle from the
-            # current Mac theme.  kThemeBrushFocusHighlight is
-            # available on Mac OS 8.5 and higher
-            if hasattr(wx, 'MacThemeColour'):
-                c = wx.MacThemeColour(k)
-            else:
-                brush = wx.Brush(active_colour)
-                brush.MacSetTheme(k)
-                c = brush.GetColour()
-            self._focusPen = wx.Pen(c, 2, wx.PENSTYLE_SOLID)
-        else:
-            self._focusPen = wx.Pen(active_colour, 1, wx.PENSTYLE_USER_DASH)
-            self._focusPen.SetDashes([1, 1])
-            self._focusPen.SetCap(wx.CAP_BUTT)
-
 
     def SetBaseColour(self, base_colour):
         """
@@ -186,6 +139,17 @@ class AuiDefaultTabArt(object):
         self._base_colour = base_colour
         self._base_colour_pen = wx.Pen(self._base_colour)
         self._base_colour_brush = wx.Brush(self._base_colour)
+
+
+    def _reloadCloseBmp(self, scale_factor=1):
+        if wx.Platform == "__WXMAC__":
+            if not hasattr(self, '_active_close_bmp') or \
+               scale_factor != self._active_close_bmp.GetScaleFactor():
+                active_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+                disabled_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+                bk = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
+                self._active_close_bmp = DrawMACCloseButton(active_colour, bk, scale_factor=scale_factor)
+                self._disabled_close_bmp = DrawMACCloseButton(disabled_colour, bk, scale_factor=scale_factor)
 
 
     def SetDefaultColours(self, base_colour=None):
@@ -207,14 +171,42 @@ class AuiDefaultTabArt(object):
         self._background_bottom_colour = StepColour(base_colour, 170)
 
         self._tab_top_colour = base_colour
-        self._tab_bottom_colour = wx.WHITE
-        self._tab_gradient_highlight_colour = wx.WHITE
+        self._tab_bottom_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        self._tab_gradient_highlight_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
         self._tab_inactive_top_colour = base_colour
         self._tab_inactive_bottom_colour = StepColour(self._tab_inactive_top_colour, 160)
 
         self._tab_text_colour = lambda page: page.text_colour
         self._tab_disabled_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+
+        active_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        disabled_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        bk = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
+
+        if wx.Platform == "__WXMAC__":
+            self._active_close_bmp = DrawMACCloseButton(active_colour, bk)
+            self._disabled_close_bmp = DrawMACCloseButton(disabled_colour, bk)
+        else:
+            self._active_close_bmp = BitmapFromBits(nb_close_bits, 16, 16, active_colour)
+            self._disabled_close_bmp = BitmapFromBits(nb_close_bits, 16, 16, disabled_colour)
+
+        self._hover_close_bmp = self._active_close_bmp
+        self._pressed_close_bmp = self._active_close_bmp
+
+        self._active_left_bmp = BitmapFromBits(nb_left_bits, 16, 16, active_colour)
+        self._disabled_left_bmp = BitmapFromBits(nb_left_bits, 16, 16, disabled_colour)
+
+        self._active_right_bmp = BitmapFromBits(nb_right_bits, 16, 16, active_colour)
+        self._disabled_right_bmp = BitmapFromBits(nb_right_bits, 16, 16, disabled_colour)
+
+        self._active_windowlist_bmp = BitmapFromBits(nb_list_bits, 16, 16, active_colour)
+        self._disabled_windowlist_bmp = BitmapFromBits(nb_list_bits, 16, 16, disabled_colour)
+
+        self._focusPen = wx.Pen(active_colour, 1, wx.PENSTYLE_USER_DASH)
+        self._focusPen.SetDashes([1, 1])
+        self._focusPen.SetCap(wx.CAP_BUTT)
+        self._reloadCloseBmp()
 
 
     def Clone(self):
@@ -599,6 +591,8 @@ class AuiDefaultTabArt(object):
         # draw close button if necessary
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
 
+            scale_factor = dc.GetContentScaleFactor()
+            self._reloadCloseBmp(scale_factor)
             bmp = self._disabled_close_bmp
 
             if close_button_state == AUI_BUTTON_STATE_HOVER:
@@ -736,6 +730,8 @@ class AuiDefaultTabArt(object):
         bitmap_id, button_state = button.id, button.cur_state
 
         if bitmap_id == AUI_BUTTON_CLOSE:
+            scale_factor = dc.GetContentScaleFactor()
+            self._reloadCloseBmp(scale_factor)
             if button_state & AUI_BUTTON_STATE_DISABLED:
                 bmp = self._disabled_close_bmp
             elif button_state & AUI_BUTTON_STATE_HOVER:
@@ -1006,7 +1002,7 @@ class AuiSimpleTabArt(object):
 
         background_colour = base_colour
         normaltab_colour = base_colour
-        selectedtab_colour = wx.WHITE
+        selectedtab_colour =  wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
         self._bkbrush = wx.Brush(background_colour)
         self._normal_bkbrush = wx.Brush(normaltab_colour)
@@ -1026,6 +1022,9 @@ class AuiSimpleTabArt(object):
         self._active_windowlist_bmp = BitmapFromBits(nb_list_bits, 16, 16, wx.BLACK)
         self._disabled_windowlist_bmp = BitmapFromBits(nb_list_bits, 16, 16, wx.Colour(128, 128, 128))
 
+
+    def SetDefaultColours(self):
+        pass
 
     def Clone(self):
         """ Clones the art object. """
@@ -2107,10 +2106,12 @@ class FF2TabArt(AuiDefaultTabArt):
         top = wx.Rect(rect.GetTopLeft(), rightPt)
         bottom = wx.Rect(leftPt, rect.GetBottomRight())
 
-        topStartColour = wx.WHITE
+        topStartColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
         if not focus:
             topStartColour = LightColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE), 50)
+        else:
+            topStartColour = LightColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE), 25)
 
         topEndColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
         bottomStartColour = topEndColour
@@ -2291,7 +2292,7 @@ class VC8TabArt(AuiDefaultTabArt):
 
         if page.active:
             # Delete the bottom line (or the upper one, in case we use wxBOTTOM)
-            dc.SetPen(wx.WHITE_PEN)
+            dc.SetPen(wx.Pen(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)))
             dc.DrawLine(tabPoints[0].x, tabPoints[0].y, tabPoints[6].x, tabPoints[6].y)
 
         dc.SetClippingRegion(tab_x, tab_y, clip_width + 2, tab_height - 3)
@@ -2442,7 +2443,7 @@ class VC8TabArt(AuiDefaultTabArt):
         dc.SetDeviceClippingRegion(region)
 
         if active:
-            bottom_colour = top_colour = wx.WHITE
+            bottom_colour = top_colour =  wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         else:
             bottom_colour = StepColour(self._base_colour, 90)
             top_colour = StepColour(self._base_colour, 170)

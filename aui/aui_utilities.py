@@ -65,6 +65,8 @@ def StepColour(c, ialpha):
 
     if ialpha == 100:
         return c
+    if wx.SystemSettings.GetAppearance().IsDark():
+        ialpha = 200 - ialpha
 
     r, g, b, a = c.Red(), c.Green(), c.Blue(), c.Alpha()
 
@@ -157,7 +159,17 @@ def BitmapFromBits(bits, w, h, colour):
 
     img = wx.Bitmap(bits, w, h).ConvertToImage()
     img.Replace(0, 0, 0, 123, 123, 123)
-    img.Replace(255, 255, 255, colour.Red(), colour.Green(), colour.Blue())
+    alpha = colour.GetAlpha()
+    if alpha != 255:
+        if not img.HasAlpha():
+            img.InitAlpha()
+        for x in range(img.GetWidth()):
+            for y in range(img.GetHeight()):
+                if img.GetRed(x, y) == 255 and img.GetBlue(x, y) == 255 and img.GetGreen(x, y) == 255:
+                    img.SetRGB(x, y, colour.Red(),  colour.Green(),  colour.Blue())
+                    img.SetAlpha(x, y, alpha)
+    else:
+        img.Replace(255, 255, 255, colour.Red(),  colour.Green(),  colour.Blue())
     img.SetMaskColour(123, 123, 123)
     return wx.Bitmap(img)
 
@@ -183,18 +195,7 @@ def GetBaseColour():
     mimicking as closely as possible the platform UI colours.
     """
 
-    if wx.Platform == "__WXMAC__":
-        k = Carbon.Appearance.kThemeBrushToolbarBackground if CARBON else 52
-        if hasattr(wx, 'MacThemeColour'):
-            base_colour = wx.MacThemeColour(k)
-        else:
-            brush = wx.Brush(wx.BLACK)
-            brush.MacSetTheme(k)
-            base_colour = brush.GetColour()
-
-    else:
-
-        base_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
+    base_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
 
     # the base_colour is too pale to use as our base colour,
     # so darken it a bit
@@ -273,7 +274,7 @@ def PaneCreateStippleBitmap():
     return img.ConvertToBitmap()
 
 
-def DrawMACCloseButton(colour, backColour=None):
+def DrawMACCloseButton(colour, backColour=None, scale_factor=1):
     """
     Draws the wxMAC tab close button using :class:`GraphicsContext`.
 
@@ -281,7 +282,8 @@ def DrawMACCloseButton(colour, backColour=None):
     :param wx.Colour `backColour`: the optional background colour for the circle.
     """
 
-    bmp = wx.Bitmap.FromRGBA(16, 16)
+    bmp = wx.Bitmap.FromRGBA(16*scale_factor, 16*scale_factor)
+    bmp.SetScaleFactor(scale_factor)
     dc = wx.MemoryDC()
     dc.SelectObject(bmp)
 
@@ -464,33 +466,25 @@ class TabDragImage(wx.DragImage):
 
         memory.SelectObject(wx.NullBitmap)
 
-        # Gtk and Windows unfortunately don't do so well with transparent
-        # drawing so this hack corrects the image to have a transparent
-        # background.
-        timg = bitmap.ConvertToImage()
-        if not timg.HasAlpha():
-            timg.InitAlpha()
-        ## for y in range(timg.GetHeight()):
-        ##     for x in range(timg.GetWidth()):
-        ##         pix = wx.Colour(timg.GetRed(x, y),
-        ##                         timg.GetGreen(x, y),
-        ##                         timg.GetBlue(x, y))
-        ##         if pix == self._backgroundColour:
-        ##             timg.SetAlpha(x, y, 0)
-        # local opt list comprehension
-        wxColour = wx.Colour
-        GetRed = timg.GetRed
-        GetGreen = timg.GetGreen
-        GetBlue = timg.GetBlue
-        SetAlpha = timg.SetAlpha
-        _backgroundColour = self._backgroundColour
-        [SetAlpha(x, y, 0)
-            for x in range(timg.GetWidth())
-                for y in range(timg.GetHeight())
-                    if wxColour(GetRed(x, y), GetGreen(x, y), GetBlue(x, y)) == _backgroundColour]
-        bitmap = timg.ConvertToBitmap()
-        bitmap.SetScaleFactor(scale_factor)
-        return bitmap
+        return SetTransparentColor(bitmap, self._backgroundColour)
+
+def SetTransparentColor(bitmap, clr):
+    timg = bitmap.ConvertToImage()
+    if not timg.HasAlpha():
+        timg.InitAlpha()
+    wxColour = wx.Colour
+    GetRed = timg.GetRed
+    GetGreen = timg.GetGreen
+    GetBlue = timg.GetBlue
+    SetAlpha = timg.SetAlpha
+
+    [SetAlpha(x, y, 0)
+     for x in range(timg.GetWidth())
+     for y in range(timg.GetHeight())
+     if wxColour(GetRed(x, y), GetGreen(x, y), GetBlue(x, y)) == clr]
+    bitmap2 = timg.ConvertToBitmap()
+    bitmap2.SetScaleFactor(bitmap.GetScaleFactor())
+    return bitmap2
 
 
 def GetDockingImage(direction, useAero, center):

@@ -852,12 +852,12 @@ class TabNavigatorWindow(wx.Dialog):
         dc = wx.PaintDC(self._panel)
         rect = self._panel.GetClientRect()
 
-        bmp = wx.Bitmap(rect.width, rect.height)
+        bmp = wx.Bitmap(rect.width, rect.height, dc)
 
         mem_dc = wx.MemoryDC()
         mem_dc.SelectObject(bmp)
 
-        endColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNSHADOW)
+        endColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         startColour = LightColour(endColour, 50)
         mem_dc.GradientFillLinear(rect, startColour, endColour, wx.SOUTH)
 
@@ -876,7 +876,8 @@ class TabNavigatorWindow(wx.Dialog):
 
         txtPt.x = bmpPt.x + self._props.Icon.GetLogicalWidth() + 4
         txtPt.y = (rect.height - fontHeight)//2
-        mem_dc.SetTextForeground(wx.WHITE)
+        text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        mem_dc.SetTextForeground(text_colour)
         mem_dc.DrawText("Opened tabs:", txtPt.x, txtPt.y)
         mem_dc.SelectObject(wx.NullBitmap)
 
@@ -1956,6 +1957,7 @@ class AuiTabCtrl(wx.Control, AuiTabContainer):
         self._on_button = False
         self._tooltip_timer = None
         self._tooltip_wnd = None
+        self._default_page_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
@@ -1975,6 +1977,16 @@ class AuiTabCtrl(wx.Control, AuiTabContainer):
         self.Bind(wx.EVT_ENTER_WINDOW, self.OnEnterWindow)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeaveWindow)
         self.Bind(EVT_AUINOTEBOOK_BUTTON, self.OnButton)
+
+        self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChanged)
+
+    def OnSysColourChanged(self, event):
+        event.Skip()
+        self._art.SetDefaultColours()
+        for page in self._pages:
+            if page.text_colour == self._default_page_text_colour:
+                page.text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        self._default_page_text_colour =  wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
 
 
     def IsDragging(self):
@@ -3049,9 +3061,18 @@ class AuiNotebook(wx.Panel):
         self._tabs = AuiTabContainer(self)
 
         self.InitNotebook(agwStyle)
+        self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChanged)
+        self._default_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
 
     NavigatorProps = property(lambda self: self._navProps)
 
+    def OnSysColourChanged(self, event):
+        event.Skip()
+        self._tabs._art.SetDefaultColours()
+        for page in self._tabs._pages:
+            if page.text_colour == self._default_text_colour:
+                page.text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        self._default_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
 
     def Destroy(self):
         """

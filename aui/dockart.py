@@ -200,15 +200,7 @@ class AuiDefaultDockArt(object):
         self.SetDefaultColours()
 
         isMac = wx.Platform == "__WXMAC__"
-
-        if isMac:
-            self._active_caption_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        else:
-            self._active_caption_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_ACTIVECAPTION)
-
-        self._active_caption_gradient_colour = LightContrastColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
-        self._active_caption_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
-        self._inactive_caption_text_colour = wx.BLACK
+        self.SetDefaultPaneBitmaps(isMac)
 
 
     def SetDefaultColours(self, base_colour=None):
@@ -239,10 +231,23 @@ class AuiDefaultDockArt(object):
         self._gripper_brush = wx.Brush(base_colour)
         self._gripper_pen1 = wx.Pen(darker4_colour)
         self._gripper_pen2 = wx.Pen(darker3_colour)
-        self._gripper_pen3 = wx.WHITE_PEN
+        self._gripper_pen3 = wx.Pen(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
 
-        self._hint_background_colour = colourHintBackground
-        self._hint_border_colour = colourHintBorder
+        self._hint_background_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HOTLIGHT)
+
+        self._hint_border_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWFRAME)
+
+        isMac = wx.Platform == "__WXMAC__"
+
+        if isMac:
+            self._active_caption_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        else:
+            self._active_caption_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_ACTIVECAPTION)
+
+        self._active_caption_gradient_colour = LightContrastColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+        self._active_caption_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+        self._inactive_caption_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+
 
 
     def GetMetric(self, id):
@@ -356,7 +361,8 @@ class AuiDefaultDockArt(object):
             if not self._custom_pane_bitmaps and wx.Platform == "__WXMAC__":
                 # No custom bitmaps for the pane close button
                 # Change the MAC close bitmap colour
-                self._inactive_close_bitmap = DrawMACCloseButton(wx.WHITE, colour)
+                face = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+                self._inactive_close_bitmap = DrawMACCloseButton(face, colour)
 
         elif id == AUI_DOCKART_INACTIVE_CAPTION_GRADIENT_COLOUR:
             self._inactive_caption_gradient_colour = colour
@@ -367,7 +373,8 @@ class AuiDefaultDockArt(object):
             if not self._custom_pane_bitmaps and wx.Platform == "__WXMAC__":
                 # No custom bitmaps for the pane close button
                 # Change the MAC close bitmap colour
-                self._active_close_bitmap = DrawMACCloseButton(wx.WHITE, colour)
+                face = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+                self._active_close_bitmap = DrawMACCloseButton(face, colour)
 
         elif id == AUI_DOCKART_ACTIVE_CAPTION_GRADIENT_COLOUR:
             self._active_caption_gradient_colour = colour
@@ -454,7 +461,8 @@ class AuiDefaultDockArt(object):
         if wx.Platform == "__WXMAC__":
             # we have to clear first, otherwise we are drawing a light striped pattern
             # over an already darker striped background
-            dc.SetBrush(wx.WHITE_BRUSH)
+            c = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
+            dc.SetBrush(wx.Brush(c))
             dc.DrawRectangle(rect.x, rect.y, rect.width, rect.height)
 
         DrawGradientRectangle(dc, rect, self._background_brush.GetColour(),
@@ -483,7 +491,8 @@ class AuiDefaultDockArt(object):
 
             for ii in range(0, border_width):
 
-                dc.SetPen(wx.WHITE_PEN)
+                c = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
+                dc.SetPen(wx.Pen(c))
                 dc.DrawLine(drect.x, drect.y, drect.x+drect.width, drect.y)
                 dc.DrawLine(drect.x, drect.y, drect.x, drect.y+drect.height)
                 dc.SetPen(self._border_pen)
@@ -710,6 +719,7 @@ class AuiDefaultDockArt(object):
             return
 
         if button == AUI_BUTTON_CLOSE:
+            self._reloadCloseBmp(dc.GetContentScaleFactor())
             if pane.state & optionActive:
                 bmp = self._active_close_bitmap
             else:
@@ -826,37 +836,46 @@ class AuiDefaultDockArt(object):
                     break
 
 
+    def _reloadCloseBmp(self, scale_factor=1):
+        if wx.Platform == "__WXMAC__":
+            if not hasattr(self, '_active_close_bitmap') or \
+               scale_factor != self._active_close_bitmap.GetScaleFactor():
+                face = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+                self._inactive_close_bitmap = DrawMACCloseButton(face, self._inactive_caption_colour, scale_factor=scale_factor)
+                self._active_close_bitmap = DrawMACCloseButton(face, self._active_caption_colour, scale_factor=scale_factor)
+
+
     def SetDefaultPaneBitmaps(self, isMac):
         """
         Assigns the default pane bitmaps.
 
         :param bool `isMac`: whether we are on wxMAC or not.
         """
-
+        face = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         if isMac:
-            self._inactive_close_bitmap = DrawMACCloseButton(wx.WHITE, self._inactive_caption_colour)
-            self._active_close_bitmap = DrawMACCloseButton(wx.WHITE, self._active_caption_colour)
+            self._inactive_close_bitmap = DrawMACCloseButton(face, self._inactive_caption_colour)
+            self._active_close_bitmap = DrawMACCloseButton(face, self._active_caption_colour)
         else:
             self._inactive_close_bitmap = BitmapFromBits(close_bits, 16, 16, self._inactive_caption_text_colour)
             self._active_close_bitmap = BitmapFromBits(close_bits, 16, 16, self._active_caption_text_colour)
 
         if isMac:
-            self._inactive_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, wx.WHITE)
-            self._active_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, wx.WHITE)
+            self._inactive_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, face)
+            self._active_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, face)
         else:
             self._inactive_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, self._inactive_caption_text_colour)
             self._active_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, self._active_caption_text_colour)
 
         if isMac:
-            self._inactive_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, wx.WHITE)
-            self._active_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, wx.WHITE)
+            self._inactive_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, face)
+            self._active_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, face)
         else:
             self._inactive_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, self._inactive_caption_text_colour)
             self._active_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, self._active_caption_text_colour)
 
         if isMac:
-            self._inactive_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, wx.WHITE)
-            self._active_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, wx.WHITE)
+            self._inactive_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, face)
+            self._active_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, face)
         else:
             self._inactive_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, self._inactive_caption_text_colour)
             self._active_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, self._active_caption_text_colour)

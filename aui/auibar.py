@@ -1429,6 +1429,7 @@ class AuiDefaultToolBarArt(object):
         menuPopup = wx.Menu()
         items_added = 0
 
+        items_menu = {}
         for item in items:
 
             if item.GetKind() not in [ITEM_SEPARATOR, ITEM_SPACER, ITEM_CONTROL]:
@@ -1440,7 +1441,8 @@ class AuiDefaultToolBarArt(object):
                     text = " "
 
                 kind = item.GetKind()
-                m = wx.MenuItem(menuPopup, item.GetId(), text, item.GetShortHelp(), kind)
+                mid = wx.NewIdRef()
+                m = wx.MenuItem(menuPopup, mid, text, item.GetShortHelp(), kind)
                 orientation = item.GetOrientation()
                 item.SetOrientation(AUI_TBTOOL_HORIZONTAL)
 
@@ -1454,6 +1456,7 @@ class AuiDefaultToolBarArt(object):
                     state = (item.state & AUI_BUTTON_STATE_CHECKED and [True] or [False])[0]
                     m.Check(state)
 
+                items_menu[mid] = item
                 items_added += 1
 
             else:
@@ -1468,7 +1471,10 @@ class AuiDefaultToolBarArt(object):
         command = cc.GetCommandId()
         wnd.PopEventHandler(True)
 
-        return command
+        if command in items_menu:
+            item = items_menu[command]
+            return item
+        return None
 
 
     def GetToolsPosition(self, dc, item, rect):
@@ -3635,14 +3641,17 @@ class AuiToolBar(wx.Control):
                     res = self._art.ShowDropDown(self, overflow_items)
                     self._overflow_state = 0
                     self.Refresh(False)
-                    if res != -1:
-                        e = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, res)
-                        e.SetEventObject(self)
-                        if not self.GetParent().ProcessEvent(e):
-                            tool = self.FindTool(res)
+                    if res is not None:
+                        if res.id == ID_RESTORE_FRAME:
+                            self.RestoreMinizedPane(res)
+                        else:
+                            e = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, res.id)
+                            e.SetEventObject(self)
+                            self.GetParent().ProcessEvent(e)
+                            tool = self.FindTool(res.id)
                             if tool:
                                 state = (tool.state & AUI_BUTTON_STATE_CHECKED and [True] or [False])[0]
-                                self.ToggleTool(res, not state)
+                                self.ToggleTool(res.id, not state)
 
                 return
 
@@ -3682,6 +3691,28 @@ class AuiToolBar(wx.Control):
             e.SetClickPoint(event.GetPosition())
             e.SetItemRect(rect)
             self.ProcessEvent(e)
+            self.DoIdleUpdate()
+
+
+    def RestoreMinizedPane(self, item):
+        if item.id == ID_RESTORE_FRAME:
+            # find aui manager
+            manager = self.GetAuiManager()
+            if not manager:
+                return
+
+            if item.target:
+                pane = manager.GetPane(item.target)
+            else:
+                pane = manager.GetPane(self)
+
+            from . import framemanager
+            e = framemanager.AuiManagerEvent(framemanager.wxEVT_AUI_PANE_MIN_RESTORE)
+
+            e.SetManager(manager)
+            e.SetPane(pane)
+
+            manager.ProcessEvent(e)
             self.DoIdleUpdate()
 
 
@@ -3730,26 +3761,7 @@ class AuiToolBar(wx.Control):
                 else:
 
                     if self._action_item.id == ID_RESTORE_FRAME:
-                        # find aui manager
-                        manager = self.GetAuiManager()
-
-                        if not manager:
-                            return
-
-                        if self._action_item.target:
-                            pane = manager.GetPane(self._action_item.target)
-                        else:
-                            pane = manager.GetPane(self)
-
-                        from . import framemanager
-                        e = framemanager.AuiManagerEvent(framemanager.wxEVT_AUI_PANE_MIN_RESTORE)
-
-                        e.SetManager(manager)
-                        e.SetPane(pane)
-
-                        manager.ProcessEvent(e)
-                        self.DoIdleUpdate()
-
+                        self.RestoreMinizedPane(self._action_item)
                     else:
 
                         e = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, self._action_item.id)

@@ -506,6 +506,9 @@ class AuiPaneInfo(object):
     actionPane = 2 ** 34  # used internally
     wasMaximized = 2 ** 35  # used internally
     needsRestore = 2 ** 36  # used internally
+    # used internally to indicate that the toolbar is used to hold the button
+    # to restore the minimized pane
+    minimizeToolbar = 2**37
 
     def __init__(self):
         """ Default class constructor. """
@@ -5198,6 +5201,9 @@ class AuiManager(wx.EvtHandler):
         result = "layout2|"
 
         for pane in self._panes:
+            if pane.HasFlag(AuiPaneInfo.minimizeToolbar):
+                # ignore the generated minimized toolbar panes
+                continue
             result += self.SavePaneInfo(pane) + "|"
 
         for dock in self._docks:
@@ -5231,6 +5237,13 @@ class AuiManager(wx.EvtHandler):
 
         if part != "layout2":
             return False
+
+        # delete the generated minimized toolbar panes, as they will be re-created
+        # if they are still minimized in the new perspective.
+        panes = list(self._panes)
+        for pane in panes:
+            if pane.HasFlag(AuiPaneInfo.minimizeToolbar):
+                self.RestoreMinimizedPane(pane)
 
         # mark all panes currently managed as docked and hidden
         saveCapt = {}  # see restorecaption param
@@ -9807,8 +9820,8 @@ class AuiManager(wx.EvtHandler):
                 tbStyle |= AUI_TB_TEXT
 
             if posMask == AUI_MINIMIZE_POS_TOOLBAR:
-                minimize_toolbar = self.GetPane(paneInfo.minimize_target)
-                if not minimize_toolbar.IsOk():
+                minimize_toolbar_pane = self.GetPane(paneInfo.minimize_target)
+                if not minimize_toolbar_pane.IsOk():
                     posMask = AUI_MINIMIZE_POS_SMART
                     if paneInfo.dock_direction in [AUI_DOCK_TOP, AUI_DOCK_BOTTOM]:
                         tbStyle |= AUI_TB_HORZ_LAYOUT
@@ -9818,7 +9831,7 @@ class AuiManager(wx.EvtHandler):
                         if captMask == AUI_MINIMIZE_CAPT_SMART:
                             tbStyle |= AUI_TB_CLOCKWISE
                 else:
-                    minimize_toolbar = minimize_toolbar.window
+                    minimize_toolbar = minimize_toolbar_pane.window
 
             elif posMask == AUI_MINIMIZE_POS_SMART:
                 if paneInfo.dock_direction in [AUI_DOCK_TOP, AUI_DOCK_BOTTOM]:
@@ -9883,31 +9896,24 @@ class AuiManager(wx.EvtHandler):
                 paneInfo.SetFlag(paneInfo.wasMaximized, True)
 
             if posMask != AUI_MINIMIZE_POS_TOOLBAR:
+                minimize_toolbar_pane = AuiPaneInfo().\
+                        Name(toolpanelname).Caption(paneInfo.caption). \
+                        ToolbarPane().BottomDockable(False). \
+                        LeftDockable(False).RightDockable(False).DestroyOnClose()
+                minimize_toolbar_pane.SetFlag(AuiPaneInfo.minimizeToolbar, True)
 
                 if dockDirection == AUI_DOCK_TOP:
-                    self.AddPane(minimize_toolbar, AuiPaneInfo(). \
-                                 Name(toolpanelname).Caption(paneInfo.caption). \
-                                 ToolbarPane().Top().BottomDockable(False). \
-                                 LeftDockable(False).RightDockable(False).DestroyOnClose())
-
+                    minimize_toolbar_pane.Top()
                 elif dockDirection == AUI_DOCK_BOTTOM:
-                    self.AddPane(minimize_toolbar, AuiPaneInfo(). \
-                                 Name(toolpanelname).Caption(paneInfo.caption). \
-                                 ToolbarPane().Bottom().TopDockable(False). \
-                                 LeftDockable(False).RightDockable(False).DestroyOnClose())
-
+                    minimize_toolbar_pane.Bottom()
                 elif dockDirection == AUI_DOCK_LEFT:
-                    self.AddPane(minimize_toolbar, AuiPaneInfo(). \
-                                 Name(toolpanelname).Caption(paneInfo.caption). \
-                                 ToolbarPane().Left().TopDockable(False). \
-                                 BottomDockable(False).RightDockable(False).DestroyOnClose())
-
+                    minimize_toolbar_pane.Left()
                 elif dockDirection in [AUI_DOCK_RIGHT, AUI_DOCK_CENTER]:
-                    self.AddPane(minimize_toolbar, AuiPaneInfo(). \
-                                 Name(toolpanelname).Caption(paneInfo.caption). \
-                                 ToolbarPane().Right().TopDockable(False). \
-                                 LeftDockable(False).BottomDockable(False).DestroyOnClose())
+                    minimize_toolbar_pane.Right()
 
+                self.AddPane(minimize_toolbar, minimize_toolbar_pane)
+
+            minimize_toolbar_pane.best_size = minimize_toolbar.GetBestSize()
             arr = FindDocks(self._docks, paneInfo.dock_direction, paneInfo.dock_layer, paneInfo.dock_row)
 
             if arr:
@@ -10040,6 +10046,8 @@ class AuiManager(wx.EvtHandler):
                 toolbar = toolbarPane.window
                 item = toolbar.FindToolByLabel(pane.caption)
                 toolbar.DeleteTool(item.id)
+                toolbar.Realize()
+                toolbarPane.best_size = toolbar.GetBestSize()
             else:
                 paneInfo.window.Show(False)
                 self.DetachPane(paneInfo.window)

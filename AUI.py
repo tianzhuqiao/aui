@@ -10,6 +10,12 @@ import time
 
 from wx.lib.embeddedimage import PyEmbeddedImage
 
+import ctypes
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(True)
+except:
+    pass
+
 try:
     dirName = os.path.dirname(os.path.abspath(__file__))
 except:

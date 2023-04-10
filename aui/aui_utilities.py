@@ -66,7 +66,8 @@ def StepColour(c, ialpha):
     if ialpha == 100:
         return c
     if wx.SystemSettings.GetAppearance().IsDark():
-        ialpha = 200 - ialpha
+        if wx.Platform != '__WXMSW__':
+            ialpha = 200 - ialpha
 
     r, g, b, a = c.Red(), c.Green(), c.Blue(), c.Alpha()
 

@@ -2409,8 +2409,8 @@ class AuiTabCtrl(wx.Control, AuiTabContainer):
 
         if not self._is_dragging:
 
-            drag_x_threshold = wx.SystemSettings.GetMetric(wx.SYS_DRAG_X)
-            drag_y_threshold = wx.SystemSettings.GetMetric(wx.SYS_DRAG_Y)
+            drag_x_threshold = max(4, wx.SystemSettings.GetMetric(wx.SYS_DRAG_X))
+            drag_y_threshold = max(4, wx.SystemSettings.GetMetric(wx.SYS_DRAG_Y))
 
             if abs(pos.x - self._click_pt.x) > drag_x_threshold or \
                abs(pos.y - self._click_pt.y) > drag_y_threshold:

@@ -9119,8 +9119,8 @@ class AuiManager(wx.EvtHandler):
         clientPt = event.GetPosition()
         screenPt = self._frame.ClientToScreen(clientPt)
 
-        drag_x_threshold = wx.SystemSettings.GetMetric(wx.SYS_DRAG_X)
-        drag_y_threshold = wx.SystemSettings.GetMetric(wx.SYS_DRAG_Y)
+        drag_x_threshold = max(4, wx.SystemSettings.GetMetric(wx.SYS_DRAG_X))
+        drag_y_threshold = max(4, wx.SystemSettings.GetMetric(wx.SYS_DRAG_Y))
 
         if not self._action_pane:
             return

@@ -6,6 +6,8 @@ This is a clone from [wx.lib.agw.aui](https://github.com/wxWidgets/Phoenix/tree/
 5. [issue 2362](https://github.com/wxWidgets/Phoenix/issues/2362)
 6. [issue 2364](https://github.com/wxWidgets/Phoenix/issues/2364)
 7. improve dark mode
+    1. not work for notebook chrome theme and docking guide, as they are bitmap based.
+    2. not work on [windows](https://github.com/wxWidgets/wxWidgets/pull/23028)
 
 ![image](./images/light.png)
 ![image](./images/dark.png)

@@ -151,6 +151,8 @@ class AuiDefaultTabArt(object):
                 self._active_close_bmp = DrawMACCloseButton(active_colour, bk, scale_factor=scale_factor)
                 self._disabled_close_bmp = DrawMACCloseButton(disabled_colour, bk, scale_factor=scale_factor)
 
+                self._hover_close_bmp = self._active_close_bmp
+                self._pressed_close_bmp = self._active_close_bmp
 
     def SetDefaultColours(self, base_colour=None):
         """

@@ -187,12 +187,18 @@ class AuiDefaultDockArt(object):
             self._sash_size = 4
 
         self._caption_size = 19
+        self.UpdateCaptionHeight()
         self._border_size = 1
         self._button_size = 14
         self._gripper_size = 9
         self._gradient_type = AUI_GRADIENT_VERTICAL
         self._draw_sash = False
 
+    def UpdateCaptionHeight(self):
+        dc = wx.ScreenDC()
+        dc.SetFont(self._caption_font)
+        w, h = dc.GetTextExtent('ABCabc')
+        self._caption_size = h + 10
 
     def Init(self):
         """ Initializes the dock art. """
@@ -407,6 +413,7 @@ class AuiDefaultDockArt(object):
 
         if id == AUI_DOCKART_CAPTION_FONT:
             self._caption_font = font
+            self.UpdateCaptionHeight()
 
 
     def GetFont(self, id):

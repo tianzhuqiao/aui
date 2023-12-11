@@ -6488,6 +6488,11 @@ class AuiManager(wx.EvtHandler):
 
             else:
 
+                if notebook.GetShownPageCount() == 0:
+                    # if no page is visible, hide the notebook
+                    notebook_pane = self.GetPane(notebook)
+                    if notebook_pane:
+                        notebook_pane.Show(False)
                 self._notebooks[nb_idx] = notebook
 
                 # It's a keeper.

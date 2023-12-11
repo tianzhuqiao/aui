@@ -6459,12 +6459,13 @@ class AuiManager(wx.EvtHandler):
 
                 # Convert notebook page to pane...
                 window = notebook.GetPage(0)
+                page = notebook.GetPageInfo(0)
                 child_pane = self.GetPane(window)
                 notebook_pane = self.GetPane(notebook)
                 if child_pane.IsOk() and notebook_pane.IsOk():
 
                     child_pane.SetDockPos(notebook_pane)
-                    child_pane.Show(notebook_pane.IsShown())
+                    child_pane.Show(not page.hidden)
                     child_pane.window.Hide()
                     child_pane.window.Reparent(self._frame)
                     child_pane.frame = None

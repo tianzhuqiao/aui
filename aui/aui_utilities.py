@@ -22,6 +22,7 @@ __date__ = "31 March 2009"
 
 
 import wx
+import wx.svg
 
 from .aui_constants import *
 
@@ -664,5 +665,14 @@ def CopyAttributes(newArt, oldArt):
     return newArt
 
 
-
-
+def svg_to_bitmap(svg, size=None, win=None):
+    if size is None:
+        if wx.Platform == '__WXMSW__':
+            size = (24, 24)
+        else:
+            size = (16, 16)
+    bmp = wx.svg.SVGimage.CreateFromBytes(str.encode(svg))
+    bmp = bmp.ConvertToScaledBitmap(size, win)
+    if win:
+        bmp.SetScaleFactor(win.GetContentScaleFactor())
+    return bmp

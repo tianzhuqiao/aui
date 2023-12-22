@@ -114,7 +114,8 @@ from . import tabmdi
 from . import dockart
 from . import tabart
 
-from .aui_utilities import Clip, PaneCreateStippleBitmap, GetDockingImage, GetSlidingPoints, StepColour
+from .aui_utilities import Clip, PaneCreateStippleBitmap, GetDockingImage, GetSlidingPoints, \
+                           StepColour, svg_to_bitmap
 
 from .aui_constants import *
 
@@ -2530,7 +2531,7 @@ class AuiCenterDockingGuide(AuiDockingGuide):
             dc.DrawBitmap(self._aeroBmp, 0, 0, True)
             if not self._valid:
                 diff = (self._useAero == 2 and [1] or [0])[0]
-                bmpX, bmpY = self._deniedBitmap.GetLogicalWidth(), self._deniedBitmap.GetLabelHeight()
+                bmpX, bmpY = self._deniedBitmap.GetLogicalWidth(), self._deniedBitmap.GetLogicalHeight()
                 xPos, yPos = (rect.x + (rect.width) // 2 - bmpX // 2), (rect.y + (rect.height) // 2 - bmpY // 2)
                 dc.DrawBitmap(self._deniedBitmap, xPos + 1, yPos + diff, True)
 
@@ -3998,7 +3999,7 @@ class AuiManager(wx.EvtHandler):
         self._uiparts = []
 
         self._guides = []
-        self._notebooks = []
+        self._notebooks = {}
 
         self._masterManager = None
         self._currentDragItem = -1
@@ -4849,7 +4850,7 @@ class AuiManager(wx.EvtHandler):
             # This code just prevents an out-of bounds error.
             if self._notebooks:
                 nid = pane_info.notebook_id
-                if nid >= 0 and nid < len(self._notebooks):
+                if nid in self._notebooks:
                     notebook = self._notebooks[nid]
                     page_idx = notebook.GetPageIndex(pane_info.window)
                     if page_idx >= 0:
@@ -4999,7 +5000,6 @@ class AuiManager(wx.EvtHandler):
         # This is so we can get the tab-drag event.
         notebook.GetAuiManager().SetMasterManager(self)
         notebook.SetArtProvider(self._autoNBTabArt.Clone())
-        self._notebooks.append(notebook)
 
         return notebook
 
@@ -5186,7 +5186,9 @@ class AuiManager(wx.EvtHandler):
         pane.caption = pane.caption.replace("\b", ";")
         pane_part = pane_part.replace("\a", "|")
         pane_part = pane_part.replace("\b", ";")
-
+        pane.ResetButtons()
+        if pane.IsNotebookControl():
+            pane.SetNameFromNotebookId()
         return pane
 
     def SavePerspective(self):
@@ -5331,16 +5333,20 @@ class AuiManager(wx.EvtHandler):
 
             else:
                 indx = self._panes.index(p)
-            pane.window = p.window
-            pane.frame = p.frame
-            pane.buttons = p.buttons
+                pane.window = p.window
+                pane.frame = p.frame
+                pane.buttons = p.buttons
             self._panes[indx] = pane
 
             if isinstance(pane.window, auibar.AuiToolBar) and (pane.IsFloatable() or pane.IsDockable()):
                 pane.window.SetGripperVisible(True)
 
+        if update:
+            # update all panes to give notebook a chance to update it
+            self.Update()
+
         for p in self._panes:
-            if p.IsMinimized():
+            if p.IsMinimized() and p.IsOk():
                 self.MinimizePane(p, False)
 
         if update:
@@ -5991,7 +5997,7 @@ class AuiManager(wx.EvtHandler):
             if not dock.fixed:
                 for jj in range(dock_pane_count):
                     pane = dock.panes[jj]
-                    if pane.IsNotebookPage() and pane.notebook_id < len(self._notebooks):
+                    if pane.IsNotebookPage() and pane.notebook_id in self._notebooks:
                         # update dock_pos to its index in notebook
                         notebook = self._notebooks[pane.notebook_id]
                         pane.dock_pos = notebook.GetPageIndex(pane.window)
@@ -6363,6 +6369,7 @@ class AuiManager(wx.EvtHandler):
             self._frame.Refresh()
         else:
             self.Repaint()
+            self._frame.Refresh(False)
 
         if not self._masterManager:
             e = self.FireEvent(wxEVT_AUI_PERSPECTIVE_CHANGED, None, canVeto=False)
@@ -6370,24 +6377,8 @@ class AuiManager(wx.EvtHandler):
     def UpdateNotebook(self):
         """ Updates the automatic :class:`~wx.lib.agw.aui.auibook.AuiNotebook` in the layout (if any exists). """
 
-        # Workout how many notebooks we need.
-        max_notebook = -1
-
-        # destroy floating panes which have been
-        # redocked or are becoming non-floating
-        for paneInfo in self._panes:
-            if max_notebook < paneInfo.notebook_id:
-                max_notebook = paneInfo.notebook_id
-
-        # We are the master of our domain
-        extra_notebook = len(self._notebooks)
-        max_notebook += 1
-
-        for i in range(extra_notebook, max_notebook):
-            self.CreateNotebook()
-
         # Remove pages from notebooks that no-longer belong there ...
-        for nb, notebook in enumerate(self._notebooks):
+        for nb, notebook in self._notebooks.items():
             pages = notebook.GetPageCount()
             pageCounter, allPages = 0, pages
 
@@ -6415,6 +6406,8 @@ class AuiManager(wx.EvtHandler):
         pages_and_panes = {}
         for paneInfo in self._panes:
             if paneInfo.IsNotebookPage():
+                if paneInfo.notebook_id not in self._notebooks:
+                    self._notebooks[paneInfo.notebook_id] = self.CreateNotebook()
 
                 title = (paneInfo.caption == "" and [paneInfo.name] or [paneInfo.caption])[0]
 
@@ -6437,6 +6430,8 @@ class AuiManager(wx.EvtHandler):
 
             # Wire-up newly created notebooks
             elif paneInfo.IsNotebookControl() and not paneInfo.window:
+                if paneInfo.notebook_id not in self._notebooks:
+                    self._notebooks[paneInfo.notebook_id] = self.CreateNotebook()
                 paneInfo.window = self._notebooks[paneInfo.notebook_id]
 
         for notebook_id, pnp in six.iteritems(pages_and_panes):
@@ -6451,10 +6446,9 @@ class AuiManager(wx.EvtHandler):
 
         # Delete empty notebooks, and convert notebooks with 1 page to
         # normal panes...
-        remap_ids = [-1] * len(self._notebooks)
-        nb_idx = 0
 
-        for nb, notebook in enumerate(self._notebooks):
+        for nb in list(self._notebooks.keys()):
+            notebook = self._notebooks[nb]
             if notebook.GetPageCount() == 1:
 
                 # Convert notebook page to pane...
@@ -6477,7 +6471,7 @@ class AuiManager(wx.EvtHandler):
 
                     notebook.RemovePage(0)
                     notebook.Destroy()
-
+                    del self._notebooks[nb]
                 else:
 
                     raise Exception("Odd notebook docking")
@@ -6486,7 +6480,7 @@ class AuiManager(wx.EvtHandler):
 
                 self.DetachPane(notebook)
                 notebook.Destroy()
-
+                del self._notebooks[nb]
             else:
 
                 if notebook.GetShownPageCount() == 0:
@@ -6494,26 +6488,9 @@ class AuiManager(wx.EvtHandler):
                     notebook_pane = self.GetPane(notebook)
                     if notebook_pane:
                         notebook_pane.Show(False)
-                self._notebooks[nb_idx] = notebook
-
-                # It's a keeper.
-                remap_ids[nb] = nb_idx
-                nb_idx += 1
-
-        # Apply remap...
-        nb_count = len(self._notebooks)
-
-        if nb_count != nb_idx:
-
-            self._notebooks = self._notebooks[0:nb_idx]
-            for p in self._panes:
-                if p.notebook_id >= 0:
-                    p.notebook_id = remap_ids[p.notebook_id]
-                    if p.IsNotebookControl():
-                        p.SetNameFromNotebookId()
 
         # Make sure buttons are correct ...
-        for notebook in self._notebooks:
+        for _, notebook in self._notebooks.items():
             want_max = True
             want_min = True
             want_close = True
@@ -7548,7 +7525,6 @@ class AuiManager(wx.EvtHandler):
          :class:`AuiPaneInfo`;
         :param wx.Point `pt`: a mouse position to check for a drop operation.
         """
-
         screenPt = self._frame.ClientToScreen(pt)
         paneInfo = self.PaneHitTest(panes, pt)
 
@@ -9879,7 +9855,7 @@ class AuiManager(wx.EvtHandler):
             if paneInfo.icon and paneInfo.icon.IsOk():
                 restore_bitmap = paneInfo.icon
             else:
-                restore_bitmap = self._art._restore_bitmap
+                restore_bitmap = svg_to_bitmap(restore_svg, win=self._frame)#self._art._restore_bitmap
 
             if posMask == AUI_MINIMIZE_POS_TOOLBAR:
                 xsize, ysize = minimize_toolbar.GetToolBitmapSize()
@@ -9972,7 +9948,10 @@ class AuiManager(wx.EvtHandler):
         """
 
         # Create base notebook pane ...
-        nbid = len(self._notebooks)
+        if self._notebooks:
+            nbid = max(self._notebooks.keys()) + 1
+        else:
+            nbid = 0
 
         baseInfo = AuiPaneInfo()
         baseInfo.SetDockPos(paneInfo).NotebookControl(nbid). \

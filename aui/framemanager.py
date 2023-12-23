@@ -540,6 +540,7 @@ class AuiPaneInfo(object):
         self.previousDockSize = 0
         self.snapped = 0
         self.minimize_target = None
+        self.activePage = -1
 
         self.DefaultPane()
 
@@ -5105,7 +5106,11 @@ class AuiManager(wx.EvtHandler):
         result += "floatw=%d;" % pane.floating_size.x
         result += "floath=%d;" % pane.floating_size.y
         result += "notebookid=%d;" % pane.notebook_id
-        result += "transparent=%d" % pane.transparent
+        result += "transparent=%d;" % pane.transparent
+        if pane.IsNotebookControl() and pane.window:
+            result += "activepage=%d" % pane.window.GetSelection()
+        else:
+            result += "activepage=-1"
 
         return result
 
@@ -5175,6 +5180,8 @@ class AuiManager(wx.EvtHandler):
                 pane.notebook_id = int(value)
             elif val_name == "transparent":
                 pane.transparent = int(value)
+            elif val_name == "activepage":
+                pane.activePage = int(value)
             else:
                 raise Exception("Bad perspective string")
 
@@ -6511,6 +6518,9 @@ class AuiManager(wx.EvtHandler):
 
             notebook_pane = self.GetPane(notebook)
             if notebook_pane.IsOk():
+                if 0 <= notebook_pane.activePage < notebook.GetPageCount():
+                    notebook.SetSelection(notebook_pane.activePage)
+                    notebook_pane.activePage = -1
                 if notebook_pane.HasMinimizeButton() != want_min:
                     if want_min:
                         button = AuiPaneButton(AUI_BUTTON_MINIMIZE)

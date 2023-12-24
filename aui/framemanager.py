@@ -95,6 +95,7 @@ is by running the AUI sample (`AUI.py`).
 __author__ = "Andrea Gavana <andrea.gavana@gmail.com>"
 __date__ = "31 March 2009"
 
+import json
 import wx
 # just for isinstance
 from time import time
@@ -540,7 +541,7 @@ class AuiPaneInfo(object):
         self.previousDockSize = 0
         self.snapped = 0
         self.minimize_target = None
-        self.activePage = -1
+        self.active_page = -1
 
         self.DefaultPane()
 
@@ -5086,31 +5087,26 @@ class AuiManager(wx.EvtHandler):
         :param `pane`: a :class:`AuiPaneInfo` instance to save.
         """
 
-        result = "name=" + EscapeDelimiters(pane.name) + ";"
-        result += "caption=" + EscapeDelimiters(pane.caption) + ";"
-
-        result += "state=%u;" % pane.state
-        result += "dir=%d;" % pane.dock_direction
-        result += "layer=%d;" % pane.dock_layer
-        result += "row=%d;" % pane.dock_row
-        result += "pos=%d;" % pane.dock_pos
-        result += "prop=%d;" % pane.dock_proportion
-        result += "bestw=%d;" % pane.best_size.x
-        result += "besth=%d;" % pane.best_size.y
-        result += "minw=%d;" % pane.min_size.x
-        result += "minh=%d;" % pane.min_size.y
-        result += "maxw=%d;" % pane.max_size.x
-        result += "maxh=%d;" % pane.max_size.y
-        result += "floatx=%d;" % pane.floating_pos.x
-        result += "floaty=%d;" % pane.floating_pos.y
-        result += "floatw=%d;" % pane.floating_size.x
-        result += "floath=%d;" % pane.floating_size.y
-        result += "notebookid=%d;" % pane.notebook_id
-        result += "transparent=%d;" % pane.transparent
+        result = {"name": EscapeDelimiters(pane.name),
+                  "caption": EscapeDelimiters(pane.caption),
+                  "state": pane.state,
+                  "dock_direction": pane.dock_direction,
+                  "dock_layer": pane.dock_layer,
+                  "dock_row": pane.dock_row,
+                  "dock_pos": pane.dock_pos,
+                  "dock_proportion": pane.dock_proportion,
+                  "best_size": (pane.best_size.x, pane.best_size.y),
+                  "min_size": (pane.min_size.x, pane.min_size.y),
+                  "max_size": (pane.max_size.x, pane.max_size.y),
+                  "floating_pos": (pane.floating_pos.x, pane.floating_pos.y),
+                  "floating_size": (pane.floating_size.y, pane.floating_size.y),
+                  "notebook_id": pane.notebook_id,
+                  "transparent": pane.transparent,
+                  }
         if pane.IsNotebookControl() and pane.window:
-            result += "activepage=%d" % pane.window.GetSelection()
+            result["active_page"] = pane.window.GetSelection()
         else:
-            result += "activepage=-1"
+            result["active_page"] = -1
 
         return result
 
@@ -5126,77 +5122,22 @@ class AuiManager(wx.EvtHandler):
 
         # replace escaped characters so we can
         # split up the string easily
-        pane_part = pane_part.replace("\\|", "\a")
-        pane_part = pane_part.replace("\\;", "\b")
-
-        options = pane_part.split(";")
-        for items in options:
-
-            val_name, value = items.split("=", 1)
-            val_name = val_name.strip()
-
-            if val_name == "name":
-                pane.name = value
-            elif val_name == "caption":
-                pane.caption = value
-            elif val_name == "state":
-                pane.state = int(value)
-            elif val_name == "dir":
-                pane.dock_direction = int(value)
-            elif val_name == "layer":
-                pane.dock_layer = int(value)
-            elif val_name == "row":
-                pane.dock_row = int(value)
-            elif val_name == "pos":
-                pane.dock_pos = int(value)
-            elif val_name == "prop":
-                pane.dock_proportion = int(value)
-            elif val_name == "bestw":
-                pane.best_size.x = int(value)
-            elif val_name == "besth":
-                pane.best_size.y = int(value)
-                pane.best_size = wx.Size(pane.best_size.x, pane.best_size.y)
-            elif val_name == "minw":
-                pane.min_size.x = int(value)
-            elif val_name == "minh":
-                pane.min_size.y = int(value)
-                pane.min_size = wx.Size(pane.min_size.x, pane.min_size.y)
-            elif val_name == "maxw":
-                pane.max_size.x = int(value)
-            elif val_name == "maxh":
-                pane.max_size.y = int(value)
-                pane.max_size = wx.Size(pane.max_size.x, pane.max_size.y)
-            elif val_name == "floatx":
-                pane.floating_pos.x = int(value)
-            elif val_name == "floaty":
-                pane.floating_pos.y = int(value)
-                pane.floating_pos = wx.Point(pane.floating_pos.x, pane.floating_pos.y)
-            elif val_name == "floatw":
-                pane.floating_size.x = int(value)
-            elif val_name == "floath":
-                pane.floating_size.y = int(value)
-                pane.floating_size = wx.Size(pane.floating_size.x, pane.floating_size.y)
-            elif val_name == "notebookid":
-                pane.notebook_id = int(value)
-            elif val_name == "transparent":
-                pane.transparent = int(value)
-            elif val_name == "activepage":
-                pane.activePage = int(value)
+        for val_name, value in pane_part.items():
+            if hasattr(pane, val_name):
+                if val_name in ['max_size', 'min_size', 'best_size', 'floating_size']:
+                    setattr(pane, val_name, wx.Size(value[0], value[1]))
+                elif val_name in ['floating_pos']:
+                    setattr(pane, val_name, wx.Point(value[0], value[1]))
+                else:
+                    setattr(pane, val_name, value)
             else:
-                raise Exception("Bad perspective string")
+                print(f"Bad perspective string: {val_name}={value}")
 
-        # replace escaped characters so we can
-        # split up the string easily
-        pane.name = pane.name.replace("\a", "|")
-        pane.name = pane.name.replace("\b", ";")
-        pane.caption = pane.caption.replace("\a", "|")
-        pane.caption = pane.caption.replace("\b", ";")
-        pane_part = pane_part.replace("\a", "|")
-        pane_part = pane_part.replace("\b", ";")
         pane.ResetButtons()
         if pane.IsNotebookControl():
             pane.SetNameFromNotebookId()
         return pane
+
 
     def SavePerspective(self):
         """
@@ -5207,20 +5148,19 @@ class AuiManager(wx.EvtHandler):
         interface will return to the state it was when the perspective was saved.
         """
 
-        result = "layout2|"
-
+        panes = []
         for pane in self._panes:
             if pane.HasFlag(AuiPaneInfo.minimizeToolbar):
                 # ignore the generated minimized toolbar panes
                 continue
-            result += self.SavePaneInfo(pane) + "|"
+            panes.append(self.SavePaneInfo(pane))
 
+        docks = []
         for dock in self._docks:
-            result = result + ("dock_size(%d,%d,%d)=%d|") % (dock.dock_direction,
-                                                             dock.dock_layer,
-                                                             dock.dock_row,
-                                                             dock.size)
-        return result
+            docks.append([dock.dock_direction, dock.dock_layer, dock.dock_row, dock.size])
+
+        result = {"panes": panes, "docks": docks}
+        return json.dumps(result)
 
     def LoadPerspective(self, layout, update=True, restorecaption=False):
         """
@@ -5234,17 +5174,9 @@ class AuiManager(wx.EvtHandler):
         :param bool `restorecaption`: ``False``, restore from persist storage,
          otherwise use the caption defined in code.
         """
-
-        input = layout
-
-        # check layout string version
-        #    'layout1' = wxAUI 0.9.0 - wxAUI 0.9.2
-        #    'layout2' = wxAUI 0.9.2 (wxWidgets 2.8)
-        index = input.find("|")
-        part = input[0:index].strip()
-        input = input[index + 1:]
-
-        if part != "layout2":
+        try:
+            layout = json.loads(layout)
+        except:
             return False
 
         # delete the generated minimized toolbar panes, as they will be re-created
@@ -5274,52 +5206,18 @@ class AuiManager(wx.EvtHandler):
         # clear out the dock array; this will be reconstructed
         self._docks = []
 
-        # replace escaped characters so we can
-        # split up the string easily
-        input = input.replace("\\|", "\a")
-        input = input.replace("\\;", "\b")
+        docks = layout['docks']
+        for d in docks:
+            dock = AuiDockInfo()
+            dock.dock_direction = d[0]
+            dock.dock_layer = d[1]
+            dock.dock_row = d[2]
+            dock.size = d[3]
+            self._docks.append(dock)
 
-        while 1:
-
+        panes = layout['panes']
+        for pane_part in panes:
             pane = AuiPaneInfo()
-            index = input.find("|")
-            pane_part = input[0:index].strip()
-            input = input[index + 1:]
-
-            # if the string is empty, we're done parsing
-            if pane_part == "":
-                break
-
-            if pane_part[0:9] == "dock_size":
-                index = pane_part.find("=")
-                val_name = pane_part[0:index]
-                value = pane_part[index + 1:]
-
-                index = val_name.find("(")
-                piece = val_name[index + 1:]
-                index = piece.find(")")
-                piece = piece[0:index]
-
-                vals = piece.split(",")
-                dir = int(vals[0])
-                layer = int(vals[1])
-                row = int(vals[2])
-                size = int(value)
-
-                dock = AuiDockInfo()
-                dock.dock_direction = dir
-                dock.dock_layer = layer
-                dock.dock_row = row
-                dock.size = size
-                self._docks.append(dock)
-
-                continue
-
-            # Undo our escaping as LoadPaneInfo needs to take an unescaped
-            # name so it can be called by external callers
-            pane_part = pane_part.replace("\a", "|")
-            pane_part = pane_part.replace("\b", ";")
-
             pane = self.LoadPaneInfo(pane_part, pane)
 
             p = self.GetPane(pane.name)
@@ -6518,9 +6416,9 @@ class AuiManager(wx.EvtHandler):
 
             notebook_pane = self.GetPane(notebook)
             if notebook_pane.IsOk():
-                if 0 <= notebook_pane.activePage < notebook.GetPageCount():
-                    notebook.SetSelection(notebook_pane.activePage)
-                    notebook_pane.activePage = -1
+                if 0 <= notebook_pane.active_page < notebook.GetPageCount():
+                    notebook.SetSelection(notebook_pane.active_page)
+                    notebook_pane.active_page = -1
                 if notebook_pane.HasMinimizeButton() != want_min:
                     if want_min:
                         button = AuiPaneButton(AUI_BUTTON_MINIMIZE)

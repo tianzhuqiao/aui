@@ -9702,7 +9702,7 @@ class AuiManager(wx.EvtHandler):
 
             # personalize the toolbar style
 
-            tbStyle = AUI_TB_DEFAULT_STYLE
+            tbStyle = AUI_TB_DEFAULT_STYLE | AUI_TB_OVERFLOW
             posMask = paneInfo.minimize_mode & AUI_MINIMIZE_POS_MASK
             captMask = paneInfo.minimize_mode & AUI_MINIMIZE_CAPT_MASK
             dockDirection = paneInfo.dock_direction
@@ -9772,9 +9772,7 @@ class AuiManager(wx.EvtHandler):
                     img.Rescale(xsize, ysize, wx.IMAGE_QUALITY_HIGH)
                     restore_bitmap = img.ConvertToBitmap()
 
-            target = None
-            if posMask == AUI_MINIMIZE_POS_TOOLBAR:
-                target = paneInfo.name
+            target = paneInfo.name
 
             minimize_toolbar.AddSimpleTool(ID_RESTORE_FRAME, paneInfo.caption, restore_bitmap,
                                            _(six.u("Restore %s")) % paneInfo.caption, target=target)
@@ -9903,13 +9901,7 @@ class AuiManager(wx.EvtHandler):
 
         panename = paneInfo.name
 
-        if paneInfo.minimize_mode & AUI_MINIMIZE_POS_TOOLBAR:
-            pane = self.GetPane(panename)
-            hasTarget = True
-        else:
-            panename = panename[0:-4]
-            hasTarget = False
-
+        hasTarget =  paneInfo.minimize_mode & AUI_MINIMIZE_POS_TOOLBAR
         pane = self.GetPane(panename)
         pane.SetFlag(pane.needsRestore, True)
 
@@ -9942,10 +9934,12 @@ class AuiManager(wx.EvtHandler):
                 toolbar.Realize()
                 toolbarPane.best_size = toolbar.GetBestSize()
             else:
-                paneInfo.window.Show(False)
-                self.DetachPane(paneInfo.window)
-                paneInfo.Show(False)
-                paneInfo.Hide()
+                minimize_toolbar_pane = self.GetPane(pane.name+'_min')
+                if minimize_toolbar_pane.IsOk():
+                    minimize_toolbar_pane.window.Show(False)
+                    self.DetachPane(minimize_toolbar_pane.window)
+                    minimize_toolbar_pane.Show(False)
+                    minimize_toolbar_pane.Hide()
 
             self.Update()
 

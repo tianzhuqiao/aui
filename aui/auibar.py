@@ -1209,8 +1209,10 @@ class AuiDefaultToolBarArt(object):
         if not item.GetBitmap().IsOk() and not self._agwFlags & AUI_TB_TEXT:
             return wx.Size(16, 16)
 
-        width = item.GetBitmap().GetLogicalWidth()
-        height = item.GetBitmap().GetLogicalHeight()
+        width, height = 0, 0
+        if item.GetBitmap().IsOk():
+            width = item.GetBitmap().GetLogicalWidth()
+            height = item.GetBitmap().GetLogicalHeight()
 
         if self._agwFlags & AUI_TB_TEXT:
 
@@ -1418,65 +1420,6 @@ class AuiDefaultToolBarArt(object):
             self._overflow_size = size
 
 
-    def ShowDropDown(self, wnd, items):
-        """
-        Shows the drop down window menu for overflow items.
-
-        :param `wnd`: an instance of :class:`wx.Window`;
-        :param list `items`: a list of the overflow toolbar items.
-        """
-
-        menuPopup = wx.Menu()
-        items_added = 0
-
-        items_menu = {}
-        for item in items:
-
-            if item.GetKind() not in [ITEM_SEPARATOR, ITEM_SPACER, ITEM_CONTROL]:
-
-                text = item.GetShortHelp()
-                if text == "":
-                    text = item.GetLabel()
-                if text == "":
-                    text = " "
-
-                kind = item.GetKind()
-                mid = wx.NewIdRef()
-                m = wx.MenuItem(menuPopup, mid, text, item.GetShortHelp(), kind)
-                orientation = item.GetOrientation()
-                item.SetOrientation(AUI_TBTOOL_HORIZONTAL)
-
-                if kind not in [ITEM_CHECK, ITEM_RADIO]:
-                    m.SetBitmap(item.GetBitmap())
-
-                item.SetOrientation(orientation)
-
-                menuPopup.Append(m)
-                if kind in [ITEM_CHECK, ITEM_RADIO]:
-                    state = (item.state & AUI_BUTTON_STATE_CHECKED and [True] or [False])[0]
-                    m.Check(state)
-
-                items_menu[mid] = item
-                items_added += 1
-
-            else:
-
-                if items_added > 0 and item.GetKind() == ITEM_SEPARATOR:
-                    menuPopup.AppendSeparator()
-
-        cc = ToolbarCommandCapture()
-        wnd.PushEventHandler(cc)
-
-        wnd.PopupMenu(menuPopup)
-        command = cc.GetCommandId()
-        wnd.PopEventHandler(True)
-
-        if command in items_menu:
-            item = items_menu[command]
-            return item
-        return None
-
-
     def GetToolsPosition(self, dc, item, rect):
         """
         Returns the bitmap and text rectangles for a toolbar item.
@@ -1490,8 +1433,10 @@ class AuiDefaultToolBarArt(object):
         horizontal = self._orientation == AUI_TBTOOL_HORIZONTAL
         text_bottom = self._text_orientation == AUI_TBTOOL_TEXT_BOTTOM
         text_right = self._text_orientation == AUI_TBTOOL_TEXT_RIGHT
-        bmp_width = item.GetBitmap().GetLogicalWidth()
-        bmp_height = item.GetBitmap().GetLogicalHeight()
+        bmp_width, bmp_height = 0, 0
+        if item.GetBitmap().IsOk():
+            bmp_width = item.GetBitmap().GetLogicalWidth()
+            bmp_height = item.GetBitmap().GetLogicalHeight()
 
         if self._agwFlags & AUI_TB_TEXT:
             dc.SetFont(self._font)
@@ -1524,6 +1469,107 @@ class AuiDefaultToolBarArt(object):
 
         return bmp_rect, text_rect
 
+
+class AuiToolBarPopup(wx.Frame):
+    def __init__(self, parent):
+        wx.Frame.__init__(self, parent, style=wx.NO_BORDER|
+                          wx.FRAME_TOOL_WINDOW|wx.FRAME_NO_TASKBAR|
+                          wx.FRAME_FLOAT_ON_PARENT|wx.STAY_ON_TOP)
+        self._toolbar = None
+        self.tb = AuiToolBar(self, -1, agwStyle=AUI_TB_VERTICAL|AUI_TB_TEXT|AUI_TB_HORZ_TEXT)
+        self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
+
+    def OnTool(self, event):
+        item = self.tb.FindTool(event.GetId())
+        if item.GetKind() in [ITEM_CHECK, ITEM_RADIO]:
+            state = (item.state & AUI_BUTTON_STATE_CHECKED and [True] or [False])[0]
+            self._toolbar.ToggleTool(item.GetId(), state)
+        self.Cancel()
+        event.Skip()
+
+    def OnActivate(self, event):
+        if not event.GetActive():
+            wnd = wx.FindWindowAtPointer()
+            if wnd:
+                wnd = wnd[0]
+            while wnd:
+                if wnd == self:
+                    return
+                wnd = wnd.GetParent()
+            self.Cancel()
+        event.Skip()
+
+    def Cancel(self):
+        realize = False
+        for item in self.tb._items:
+            if item.GetKind() == ITEM_CONTROL:
+                origin_item = self._toolbar.FindTool(item.window.GetId())
+                if origin_item.sizer_item and not origin_item.sizer_item.IsShown():
+                    item.window.Show(False)
+                item.window.Reparent(self._toolbar)
+                realize = True
+        if realize:
+            # add controls back to the original toolbar, so realize it;
+            # however, the client size will set to be the min size (of all
+            # items); call SetClientSize() does not work since it will trigger
+            # OnSize, which call Realize() again and set the client size to min
+            # size again... The following "workaround" seems working
+            sz = self._toolbar.GetClientSize()
+            self._toolbar.Realize()
+            if self._toolbar.GetAuiManager():
+                self._toolbar.GetAuiManager().Update()
+            self._toolbar.SetClientSize(sz)
+        # refresh the toolbar; otherwise, the status of the radio buttons may
+        # not be correct.
+        self._toolbar.Refresh()
+        self.tb.ClearTools()
+        self.Hide()
+
+    def UpdateItems(self, wnd, items):
+        items_added = 0
+        self._toolbar = wnd
+        self.Unbind(wx.EVT_TOOL)
+        self.tb.ClearTools()
+        self.tb.SetAuiManager(wnd.GetAuiManager())
+        agw_flag_wnd = wnd.GetAGWWindowStyleFlag()
+        agw_flag = AUI_TB_VERTICAL|AUI_TB_TEXT|AUI_TB_HORZ_TEXT
+        if agw_flag_wnd & AUI_TB_PLAIN_BACKGROUND:
+            agw_flag |= AUI_TB_PLAIN_BACKGROUND
+        self.tb.SetAGWWindowStyleFlag(agw_flag)
+
+        for item in items:
+            tool = None
+            if item.GetKind() == ITEM_LABEL:
+                tool = self.tb.AddLabel(item.GetId(), item.GetLabel())
+            elif item.GetKind() == ITEM_SEPARATOR:
+                if items_added > 0:
+                    tool = self.tb.AddSeparator()
+            elif item.GetKind() == ITEM_CONTROL:
+                item.window.Reparent(self.tb)
+                if not item.window.IsShown():
+                    item.window.Show(True)
+                tool = self.tb.AddControl(item.window, item.GetLabel())
+            elif item.GetKind() == ITEM_CHECK:
+                tool = self.tb.AddCheckTool(item.GetId(), item.GetLabel(),
+                                            item.GetBitmap(), item.GetDisabledBitmap())
+                if item.state & AUI_BUTTON_STATE_CHECKED:
+                    tool.state |= AUI_BUTTON_STATE_CHECKED
+            elif item.GetKind() == ITEM_RADIO:
+                tool = self.tb.AddRadioTool(item.GetId(), item.GetLabel(),
+                                            item.GetBitmap(), item.GetDisabledBitmap())
+                if item.state & AUI_BUTTON_STATE_CHECKED:
+                    tool.state |= AUI_BUTTON_STATE_CHECKED
+            elif item.GetKind() == ITEM_NORMAL:
+                tool = self.tb.AddTool(item.GetId(), item.GetLabel(),
+                                       item.GetBitmap(), item.GetDisabledBitmap(), ITEM_NORMAL, target=item.target)
+                self.tb.SetToolDropDown(tool.GetId(), wnd.GetToolDropDown(tool.GetId()))
+            if tool:
+                tool.SetAlignment(wx.EXPAND)
+                items_added += 1
+
+        self.tb.Realize()
+        self.SetClientSize(self.tb.GetMinSize())
+        self.Bind(wx.EVT_TOOL, self.OnTool)
 
 class AuiToolBar(wx.Control):
     """
@@ -1598,6 +1644,7 @@ class AuiToolBar(wx.Control):
         self._custom_overflow_append = []
 
         self._items = []
+        self._popup = None
 
         self.SetMargins(5, 5, 2, 2)
         self.SetFont(wx.NORMAL_FONT)
@@ -1631,6 +1678,7 @@ class AuiToolBar(wx.Control):
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeaveWindow)
         self.Bind(wx.EVT_SET_CURSOR, self.OnSetCursor)
         self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChanged)
+        self.Bind(wx.EVT_TOOL, self.OnTool)
 
     def OnSysColourChanged(self, event):
         event.Skip()
@@ -3573,6 +3621,29 @@ class AuiToolBar(wx.Control):
         pass
 
 
+    def ShowDropDown(self, items):
+        """
+        Shows the drop down window menu for overflow items.
+
+        :param `wnd`: an instance of :class:`wx.Window`;
+        :param list `items`: a list of the overflow toolbar items.
+        """
+        # find out where to put the popup menu of window items
+        pt = wx.GetMousePosition()
+        pt = self.ScreenToClient(pt)
+
+        # find out the screen coordinate at the bottom of the tab ctrl
+        cli_rect = self.GetClientRect()
+        pt.y = cli_rect.y + cli_rect.height
+        if self._popup is None:
+            self._popup = AuiToolBarPopup(self.GetParent())
+        self._popup.Position = self.ClientToScreen(pt)
+        self._popup.UpdateItems(self, items)
+        self._popup.Show()
+        self._popup.Raise()
+        return None
+
+
     def OnLeftDown(self, event):
         """
         Handles the ``wx.EVT_LEFT_DOWN`` event for :class:`AuiToolBar`.
@@ -3638,20 +3709,9 @@ class AuiToolBar(wx.Control):
                     for i in range(count):
                         overflow_items.append(self._custom_overflow_append[i])
 
-                    res = self._art.ShowDropDown(self, overflow_items)
+                    self.ShowDropDown(overflow_items)
                     self._overflow_state = 0
                     self.Refresh(False)
-                    if res is not None:
-                        if res.id == ID_RESTORE_FRAME:
-                            self.RestoreMinizedPane(res)
-                        else:
-                            e = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, res.id)
-                            e.SetEventObject(self)
-                            self.GetParent().ProcessEvent(e)
-                            tool = self.FindTool(res.id)
-                            if tool:
-                                state = (tool.state & AUI_BUTTON_STATE_CHECKED and [True] or [False])[0]
-                                self.ToggleTool(res.id, not state)
 
                 return
 
@@ -3716,13 +3776,22 @@ class AuiToolBar(wx.Control):
             self.DoIdleUpdate()
 
 
+    def OnTool(self, event):
+        eid = event.GetId()
+        if eid == ID_RESTORE_FRAME:
+            if self._action_item.id == ID_RESTORE_FRAME:
+                item = self._action_item
+            else:
+                item = self.FindTool(eid)
+            self.RestoreMinizedPane(item)
+        event.Skip()
+
     def OnLeftUp(self, event):
         """
         Handles the ``wx.EVT_LEFT_UP`` event for :class:`AuiToolBar`.
 
         :param `event`: a :class:`MouseEvent` event to be processed.
         """
-
         self.SetPressedItem(None)
 
         hit_item = self.FindToolForPosition(*event.GetPosition())
@@ -3760,14 +3829,10 @@ class AuiToolBar(wx.Control):
 
                 else:
 
-                    if self._action_item.id == ID_RESTORE_FRAME:
-                        self.RestoreMinizedPane(self._action_item)
-                    else:
-
-                        e = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, self._action_item.id)
-                        e.SetEventObject(self)
-                        self.ProcessEvent(e)
-                        self.DoIdleUpdate()
+                    e = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, self._action_item.id)
+                    e.SetEventObject(self)
+                    self.ProcessEvent(e)
+                    self.DoIdleUpdate()
 
         # reset drag and drop member variables
         self._dragging = False

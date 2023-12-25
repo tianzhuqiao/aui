@@ -5217,31 +5217,17 @@ class AuiManager(wx.EvtHandler):
 
         panes = layout['panes']
         for pane_part in panes:
-            pane = AuiPaneInfo()
+
+            pane = self.GetPane(pane_part.get('name', ''))
+            if not pane.IsOk():
+                pane = AuiPaneInfo()
+
             pane = self.LoadPaneInfo(pane_part, pane)
 
-            p = self.GetPane(pane.name)
-            # restore pane caption from code
-            if restorecaption:
-                if pane.name in saveCapt:
-                    pane.Caption(saveCapt[pane.name])
-
-            if not p.IsOk():
+            if not pane.IsOk():
                 if pane.IsNotebookControl():
                     # notebook controls - auto add...
                     self._panes.append(pane)
-                    indx = self._panes.index(pane)
-                else:
-                    # the pane window couldn't be found
-                    # in the existing layout -- skip it
-                    continue
-
-            else:
-                indx = self._panes.index(p)
-                pane.window = p.window
-                pane.frame = p.frame
-                pane.buttons = p.buttons
-            self._panes[indx] = pane
 
             if isinstance(pane.window, auibar.AuiToolBar) and (pane.IsFloatable() or pane.IsDockable()):
                 pane.window.SetGripperVisible(True)

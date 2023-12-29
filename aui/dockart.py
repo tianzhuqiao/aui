@@ -156,10 +156,7 @@ class AuiDefaultDockArt(object):
 
         isMac = wx.Platform == "__WXMAC__"
 
-        if isMac:
-            self._caption_font = wx.SMALL_FONT
-        else:
-            self._caption_font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False)
+        self._caption_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
 
         self.SetDefaultPaneBitmaps(isMac)
         self._restore_bitmap = wx.Bitmap(restore_xpm)

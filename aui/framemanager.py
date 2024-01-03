@@ -4909,7 +4909,11 @@ class AuiManager(wx.EvtHandler):
             # save hidden state
             p.SetFlag(p.savedHiddenState, p.HasFlag(p.optionHidden))
 
-            if not p.IsToolbar() and not p.IsFloating():
+            if not p.IsToolbar() and not p.IsFloating() and not p.IsNotebookPage() and not p.IsMinimized():
+                # ignore the notebook page as its parent (notebook ctrl) will take care
+                # ignore the minimized pane as it is not showing, otherwise, we
+                # also need to remember its status (minimized) to restore it.
+
                 p.Restore()
 
                 # hide the pane, because only the newly
@@ -9902,6 +9906,9 @@ class AuiManager(wx.EvtHandler):
         if pane.IsOk():
             if not pane.IsMinimized():
                 return
+
+            if self._has_maximized:
+                self.RestoreMaximizedPane()
 
             if pane.HasFlag(pane.wasMaximized):
                 self.SavePreviousDockSizes(pane)

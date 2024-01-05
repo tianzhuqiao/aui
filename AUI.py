@@ -1128,8 +1128,7 @@ class AuiFrame(wx.Frame):
 
 
         # create some toolbars
-        tb1 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
-                             agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW)
+        tb1 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize)
         tb1.SetToolBitmapSize(wx.Size(24, 24))
         tb1.AddSimpleTool(ID_SampleItem+1, "Test", self.GetBitmap(wx.ART_ERROR, size=(24, 24)))
         tb1.AddSeparator()
@@ -1140,8 +1139,7 @@ class AuiFrame(wx.Frame):
         tb1.SetCustomOverflowItems(prepend_items, append_items)
         tb1.Realize()
 
-        tb2 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
-                             agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW)
+        tb2 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize)
         tb2.SetToolBitmapSize(wx.Size(16, 16))
 
         tb2_bmp1 = self.GetBitmap(wx.ART_QUESTION, size=(16, 16))
@@ -1160,8 +1158,7 @@ class AuiFrame(wx.Frame):
         tb2.SetCustomOverflowItems(prepend_items, append_items)
         tb2.Realize()
 
-        tb3 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
-                             agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW)
+        tb3 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize)
         tb3.SetToolBitmapSize(wx.Size(16, 16))
         tb3_bmp1 = self.GetBitmap(wx.ART_FOLDER, size=(16, 16))
         tb3.AddSimpleTool(ID_SampleItem+16, "Check 1", tb3_bmp1, "Check 1", aui.ITEM_CHECK)
@@ -1181,7 +1178,9 @@ class AuiFrame(wx.Frame):
         tb3.Realize()
 
         tb4 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
-                             agwStyle=aui.AUI_TB_OVERFLOW | aui.AUI_TB_TEXT | aui.AUI_TB_HORZ_TEXT)
+                             agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_HORZ_TEXT)
+        tb4.SetVertAGWStyle(aui.AUI_TB_HORZ_TEXT)
+        tb4.SetVertAlignment(wx.EXPAND)
         tb4.SetToolBitmapSize(wx.Size(16, 16))
         tb4_bmp1 = self.GetBitmap(wx.ART_NORMAL_FILE, size=(16, 16))
         tb4.AddSimpleTool(ID_DropDownToolbarItem, "Item 1", tb4_bmp1)
@@ -1201,7 +1200,7 @@ class AuiFrame(wx.Frame):
         tb4.Realize()
 
         tb5 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
-                             agwStyle=aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
+                             agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_VERTICAL)
 
         tb5.SetToolBitmapSize(wx.Size(24, 24))
         tb5.AddSimpleTool(ID_SampleItem+30, "Test", self.GetBitmap(wx.ART_ERROR, size=(24, 24)))
@@ -1213,9 +1212,9 @@ class AuiFrame(wx.Frame):
         tb5.SetCustomOverflowItems(prepend_items, append_items)
         tb5.Realize()
 
-        tb6 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,
-                             agwStyle=aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERT_TEXT)
+        tb6 = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize)
         tb6.SetToolBitmapSize(wx.Size(16, 16))
+        tb6.SetVertAGWStyle(aui.AUI_TB_VERT_TEXT)
         tb6.AddSimpleTool(ID_SampleItem+35, "Clockwise 1", self.GetBitmap(wx.ART_ERROR, size=(16, 16)))
         tb6.AddSeparator()
         tb6.AddSimpleTool(ID_SampleItem+36, "Clockwise 2", self.GetBitmap(wx.ART_QUESTION, size=(16, 16)))

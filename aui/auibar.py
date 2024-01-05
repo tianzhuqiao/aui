@@ -1476,7 +1476,7 @@ class AuiToolBarPopup(wx.Frame):
                           wx.FRAME_TOOL_WINDOW|wx.FRAME_NO_TASKBAR|
                           wx.FRAME_FLOAT_ON_PARENT|wx.STAY_ON_TOP)
         self._toolbar = None
-        self.tb = AuiToolBar(self, -1, agwStyle=AUI_TB_VERTICAL|AUI_TB_TEXT|AUI_TB_HORZ_TEXT)
+        self.tb = AuiToolBar(self, -1, agwStyle=AUI_TB_VERTICAL|AUI_TB_HORZ_TEXT)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
 
     def OnTool(self, event):
@@ -1532,7 +1532,7 @@ class AuiToolBarPopup(wx.Frame):
         self.tb.ClearTools()
         self.tb.SetAuiManager(wnd.GetAuiManager())
         agw_flag_wnd = wnd.GetAGWWindowStyleFlag()
-        agw_flag = AUI_TB_VERTICAL|AUI_TB_TEXT|AUI_TB_HORZ_TEXT
+        agw_flag = AUI_TB_VERTICAL|AUI_TB_HORZ_TEXT
         if agw_flag_wnd & AUI_TB_PLAIN_BACKGROUND:
             agw_flag |= AUI_TB_PLAIN_BACKGROUND
         self.tb.SetAGWWindowStyleFlag(agw_flag)
@@ -1635,10 +1635,23 @@ class AuiToolBar(wx.Control):
         self._overflow_sizer_item = None
         self._dragging = False
 
-        self._agwStyle = self._originalStyle = agwStyle
+        self._agwStyle = agwStyle
+        # additional style applied in vertical orientation
+        self._vertAgwStyle = 0
+        # additional style applied in horizontal orientation
+        self._horzAgwStyle = AUI_TB_HORZ_LAYOUT
 
-        self._gripper_visible = (self._agwStyle & AUI_TB_GRIPPER and [True] or [False])[0]
-        self._overflow_visible = (self._agwStyle & AUI_TB_OVERFLOW and [True] or [False])[0]
+        # the style to align each tool item in vertical orientation
+        self._vert_alignment = wx.ALIGN_CENTER
+        # the style to align each tool item in horizontal orientation
+        self._horz_alignment = wx.ALIGN_CENTER
+
+        # flag to indicate if we are entering floating
+        self._enter_floating = False
+        # and the agwStyle before we enter floating, used to restore when exit floating
+        self._agw_style_before_floating = None
+
+        self._overflow_visible = False
         self._overflow_state = 0
         self._custom_overflow_prepend = []
         self._custom_overflow_append = []
@@ -1700,6 +1713,18 @@ class AuiToolBar(wx.Control):
         wx.Control.SetWindowStyleFlag(self, style|wx.BORDER_NONE)
 
 
+    def SetVertAGWStyle(self, style):
+        """Sets the additional AGW-specific style used in vertical orientation"""
+
+        self._vertAgwStyle = style
+
+
+    def SetHorzAGWStyle(self, style):
+        """Sets the additional AGW-specific style used in horizontal orientation"""
+
+        self._horzAgwStyle = style
+
+
     def SetAGWWindowStyleFlag(self, agwStyle):
         """
         Sets the AGW-specific style of the window.
@@ -1727,20 +1752,10 @@ class AuiToolBar(wx.Control):
          others for the change to take place immediately.
         """
 
-        self._agwStyle = self._originalStyle = agwStyle
+        self._agwStyle = agwStyle
 
         if self._art:
             self._art.SetAGWFlags(self._agwStyle)
-
-        if agwStyle & AUI_TB_GRIPPER:
-            self._gripper_visible = True
-        else:
-            self._gripper_visible = False
-
-        if agwStyle & AUI_TB_OVERFLOW:
-            self._overflow_visible = True
-        else:
-            self._overflow_visible = False
 
         if agwStyle & AUI_TB_HORZ_LAYOUT:
             self.SetToolTextOrientation(AUI_TBTOOL_TEXT_RIGHT)
@@ -1752,6 +1767,8 @@ class AuiToolBar(wx.Control):
                 self.SetToolOrientation(AUI_TBTOOL_VERT_CLOCKWISE)
             elif agwStyle & AUI_TB_COUNTERCLOCKWISE:
                 self.SetToolOrientation(AUI_TBTOOL_VERT_COUNTERCLOCKWISE)
+        else:
+            self.SetToolOrientation(AUI_TBTOOL_HORIZONTAL)
 
 
     def GetAGWWindowStyleFlag(self):
@@ -1761,7 +1778,7 @@ class AuiToolBar(wx.Control):
         :see: :meth:`SetAGWWindowStyleFlag` for an explanation of various AGW-specific style.
         """
 
-        return self._originalStyle
+        return self._agwStyle
 
 
     def SetArtProvider(self, art):
@@ -2466,6 +2483,8 @@ class AuiToolBar(wx.Control):
         self._tool_orientation = orientation
         if self._art:
             self._art.SetOrientation(orientation)
+        for item in self._items:
+            item.SetOrientation(orientation)
 
 
     def GetToolOrientation(self):
@@ -2489,6 +2508,13 @@ class AuiToolBar(wx.Control):
 
         return self._tool_packing
 
+    def GetOrientation(self):
+        """
+        Returns the toolbar orientation
+            either ``wx.VERTICAL`` or ``wx.HORIZONTAL``
+        """
+        return wx.VERTICAL if self._agwStyle & AUI_TB_VERTICAL else wx.HORIZONTAL
+
 
     def SetOrientation(self, orientation):
         """
@@ -2500,7 +2526,39 @@ class AuiToolBar(wx.Control):
          docking a :class:`AuiToolBar`.
         """
 
-        pass
+        if self.GetOrientation() == orientation:
+            return False
+        agwStyle = self.GetAGWWindowStyleFlag()
+        new_agwStyle = agwStyle
+
+        alignment = None
+        if orientation == wx.VERTICAL:
+            new_agwStyle |= AUI_TB_VERTICAL
+            new_agwStyle &= ~AUI_TB_HORZ_LAYOUT
+            new_agwStyle |= self._vertAgwStyle
+            alignment = self._vert_alignment
+        else:
+            new_agwStyle &= ~AUI_TB_VERTICAL
+            new_agwStyle &= ~(AUI_TB_CLOCKWISE | AUI_TB_COUNTERCLOCKWISE)
+            new_agwStyle |= self._horzAgwStyle
+            alignment = self._horz_alignment
+
+        need_realize = False
+        if alignment:
+            # update the alignment of the tool items
+            for item in self._items:
+                if alignment != item.GetAlignment():
+                    item.SetAlignment(alignment)
+                    need_realize = True
+
+        if agwStyle != new_agwStyle:
+            self.SetAGWWindowStyleFlag(new_agwStyle)
+            need_realize = True
+
+        if need_realize:
+            self.Realize()
+            return True
+        return False
 
 
     def SetMargins(self, left=-1, right=-1, top=-1, bottom=-1):
@@ -2547,7 +2605,7 @@ class AuiToolBar(wx.Control):
     def GetGripperVisible(self):
         """ Returns whether the toolbar gripper is visible or not. """
 
-        return self._gripper_visible
+        return (self._agwStyle & AUI_TB_GRIPPER) != 0
 
 
     def SetGripperVisible(self, visible):
@@ -2556,8 +2614,9 @@ class AuiToolBar(wx.Control):
 
         :param bool `visible`: ``True`` for a visible gripper, ``False`` otherwise.
         """
+        if visible == self.GetGripperVisible():
+            return
 
-        self._gripper_visible = visible
         if visible:
             self._agwStyle |= AUI_TB_GRIPPER
         else:
@@ -2579,14 +2638,13 @@ class AuiToolBar(wx.Control):
 
         :param bool `visible`: ``True`` for a visible overflow button, ``False`` otherwise.
         """
+        is_visible = False
+        if self._agwStyle & AUI_TB_OVERFLOW:
+            is_visible = visible
 
-        self._overflow_visible = visible
-        if visible:
-            self._agwStyle |= AUI_TB_OVERFLOW
-        else:
-            self._agwStyle &= ~AUI_TB_OVERFLOW
-
-        self.Refresh(False)
+        if is_visible != self._overflow_visible:
+            self._overflow_visible = is_visible
+            self.Refresh(False)
 
 
     def SetFont(self, font):
@@ -2896,6 +2954,25 @@ class AuiToolBar(wx.Control):
 
         return tool.long_help
 
+    def SetHorzAlignment(self, alignment=wx.ALIGN_CENTER):
+        """
+        Sets the alignments of tool items when in horizontal orientation
+        :param integer `align`: the item alignment, which can be one of the available
+         :class:`wx.Sizer`alignments.
+        """
+
+        self._horz_alignment = alignment
+
+
+    def SetVertAlignment(self, alignment=wx.ALIGN_CENTER):
+        """
+        Sets the alignments of tool items when in vertical orientation
+        :param integer `align`: the item alignment, which can be one of the available
+         :class:`wx.Sizer`alignments.
+        """
+
+        self._vert_alignment = alignment
+
 
     def SetToolAlignment(self, alignment=wx.EXPAND):
         """
@@ -2934,6 +3011,8 @@ class AuiToolBar(wx.Control):
         self._custom_overflow_prepend = prepend
         self._custom_overflow_append = append
 
+        if prepend or append:
+            self.SetOverflowVisible(True)
 
     def GetToolCount(self):
         """ Returns the number of tools in the :class:`AuiToolBar`. """
@@ -3063,7 +3142,7 @@ class AuiToolBar(wx.Control):
         separator_size = self._art.GetElementSize(AUI_TBART_SEPARATOR_SIZE)
         gripper_size = self._art.GetElementSize(AUI_TBART_GRIPPER_SIZE)
 
-        if gripper_size > 0 and self._gripper_visible:
+        if gripper_size > 0 and self.GetGripperVisible():
             if horizontal:
                 self._gripper_sizer_item = sizer_Add((gripper_size, 1), 0, wx.EXPAND)
             else:
@@ -3390,11 +3469,6 @@ class AuiToolBar(wx.Control):
         x, y = self.GetClientSize()
         realize = False
 
-        if x > y:
-            self.SetOrientation(wx.HORIZONTAL)
-        else:
-            self.SetOrientation(wx.VERTICAL)
-
         horizontal = True
         if self._agwStyle & AUI_TB_VERTICAL:
             horizontal = False
@@ -3402,7 +3476,7 @@ class AuiToolBar(wx.Control):
         if (horizontal and self._absolute_min_size.x > x) or \
             (not horizontal and self._absolute_min_size.y > y):
 
-            if self._originalStyle & AUI_TB_OVERFLOW:
+            if self._agwStyle & AUI_TB_OVERFLOW:
                 if not self.GetOverflowVisible():
                     self.SetOverflowVisible(True)
 
@@ -3426,7 +3500,7 @@ class AuiToolBar(wx.Control):
 
         else:
 
-            if self._originalStyle & AUI_TB_OVERFLOW and not self._custom_overflow_append and \
+            if self._agwStyle & AUI_TB_OVERFLOW and not self._custom_overflow_append and \
                not self._custom_overflow_prepend:
                 if self.GetOverflowVisible():
                     self.SetOverflowVisible(False)
@@ -3767,6 +3841,17 @@ class AuiToolBar(wx.Control):
                 pane = manager.GetPane(self)
 
             from . import framemanager
+            if not pane.IsOk():
+                # target is not in manager, the toolbar may be floating, try
+                # the owner manager
+                manager = framemanager.GetManager(self)
+                if manager:
+                    if item.target:
+                        pane = manager.GetPane(item.target)
+                    else:
+                        pane = manager.GetPane(self)
+                else:
+                    manager = self.GetAuiManager()
             e = framemanager.AuiManagerEvent(framemanager.wxEVT_AUI_PANE_MIN_RESTORE)
 
             e.SetManager(manager)
@@ -3775,6 +3860,29 @@ class AuiToolBar(wx.Control):
             manager.ProcessEvent(e)
             self.DoIdleUpdate()
 
+    def EnterFloating(self):
+        # When in floating, only support horizontal toolbar, update the agwStyle
+        # to ensure it is horizontal
+        if self._enter_floating:
+            # already enter floating
+            return
+        self._enter_floating = True
+        self._agw_style_before_floating = self.GetAGWWindowStyleFlag()
+        self.SetGripperVisible(False)
+        self.SetOrientation(wx.HORIZONTAL)
+
+    def ExitFloating(self):
+        if self._enter_floating:
+            self._enter_floating = False
+            if self.GetAGWWindowStyleFlag() != self._agw_style_before_floating:
+                # restore the agwStyle before enter floating
+                self.SetAGWWindowStyleFlag(self._agw_style_before_floating)
+                self.Realize()
+            # this line shall be after SetAGWWindowStyleFlag as it will als
+            # update it
+            self.SetGripperVisible(True)
+            if self._popup:
+                self._popup.Reparent(self.GetParent())
 
     def OnTool(self, event):
         eid = event.GetId()

@@ -2966,6 +2966,7 @@ class AuiFloatingFrame(wx.MiniFrame):
 
             if isinstance(self._pane_window, auibar.AuiToolBar):
                 self._pane_window.SetAuiManager(self._owner_mgr)
+                self._pane_window.ExitFloating()
 
             # if we do not do this, then we can crash...
             if self._owner_mgr and self._owner_mgr._action_window == self:
@@ -6127,6 +6128,9 @@ class AuiManager(wx.EvtHandler):
             p.window.Reparent(self._frame)
             if isinstance(p.window, auibar.AuiToolBar):
                 p.window.SetAuiManager(self)
+                p.window.ExitFloating()
+                s = p.window.GetMinSize()
+                p.BestSize(s)
 
             if p.frame:
                 p.frame.SetSizer(None)
@@ -6158,10 +6162,7 @@ class AuiManager(wx.EvtHandler):
                 if p.IsToolbar():
                     bar = p.window
                     if isinstance(bar, auibar.AuiToolBar):
-                        bar.SetGripperVisible(False)
-                        agwStyle = bar.GetAGWWindowStyleFlag()
-                        bar.SetAGWWindowStyleFlag(agwStyle & ~AUI_TB_VERTICAL)
-                        bar.Realize()
+                        bar.EnterFloating()
 
                     s = p.window.GetMinSize()
                     p.BestSize(s)
@@ -6211,6 +6212,10 @@ class AuiManager(wx.EvtHandler):
                 if p.icon.IsOk():
                     pFrame.SetIcon(wx.Icon(p.icon))
 
+                # call Layout() so the AuiToolBar::OnSize will called, and update
+                # its overflow flag, otherwise, the minimized toolbar may
+                # always show the overflow button
+                pFrame.Layout()
             else:
 
                 if p.IsToolbar():
@@ -7210,25 +7215,10 @@ class AuiManager(wx.EvtHandler):
         toolBar = pane.window
         direction = pane.dock_direction
         vertical = direction in [AUI_DOCK_LEFT, AUI_DOCK_RIGHT]
-
-        agwStyle = toolBar.GetAGWWindowStyleFlag()
-        new_agwStyle = agwStyle
-
-        if vertical:
-            new_agwStyle |= AUI_TB_VERTICAL
-        else:
-            new_agwStyle &= ~(AUI_TB_VERTICAL)
-
-        if agwStyle != new_agwStyle:
-            toolBar.SetAGWWindowStyleFlag(new_agwStyle)
-        if not toolBar.GetGripperVisible():
-            toolBar.SetGripperVisible(True)
-
+        orientation = wx.VERTICAL if vertical else wx.HORIZONTAL
+        toolBar.SetOrientation(orientation)
         s = pane.window.GetMinSize()
         pane.BestSize(s)
-
-        if new_agwStyle != agwStyle:
-            toolBar.Realize()
 
         return pane
 

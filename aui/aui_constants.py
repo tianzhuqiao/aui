@@ -2525,7 +2525,7 @@ AUI_TB_HORZ_TEXT        = AUI_TB_HORZ_LAYOUT | AUI_TB_TEXT
 """ Combination of ``AUI_TB_HORZ_LAYOUT`` and ``AUI_TB_TEXT``. """
 AUI_TB_VERT_TEXT        = AUI_TB_VERTICAL | AUI_TB_CLOCKWISE | AUI_TB_TEXT
 
-AUI_TB_DEFAULT_STYLE    = 0
+AUI_TB_DEFAULT_STYLE    = AUI_TB_GRIPPER | AUI_TB_OVERFLOW
 """ `AuiToolBar` default style. """
 
 # AuiToolBar settings

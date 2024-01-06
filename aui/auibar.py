@@ -1646,10 +1646,13 @@ class AuiToolBar(wx.Control):
         # the style to align each tool item in horizontal orientation
         self._horz_alignment = wx.ALIGN_CENTER
 
+        # the min size in vertical orientation
+        self._vert_min_size = wx.Size(-1, -1)
+        # the min size in horizontal orientation
+        self._horz_min_size = wx.Size(-1, -1)
+
         # flag to indicate if we are entering floating
         self._enter_floating = False
-        # and the agwStyle before we enter floating, used to restore when exit floating
-        self._agw_style_before_floating = None
 
         self._overflow_visible = False
         self._overflow_state = 0
@@ -2954,6 +2957,22 @@ class AuiToolBar(wx.Control):
 
         return tool.long_help
 
+    def GetHorzMinSize(self):
+        """
+        Gets the minimum size when in horizontal orientation
+        """
+
+        return self._horz_min_size
+
+
+    def GetVertMinSize(self):
+        """
+        Gets the minimum size when in vertical orientation
+        """
+
+        return self._vert_min_size
+
+
     def SetHorzAlignment(self, alignment=wx.ALIGN_CENTER):
         """
         Sets the alignments of tool items when in horizontal orientation
@@ -3867,17 +3886,18 @@ class AuiToolBar(wx.Control):
             # already enter floating
             return
         self._enter_floating = True
-        self._agw_style_before_floating = self.GetAGWWindowStyleFlag()
+        # calculate the size in vertical orientation, used to show drop hint
+        self.SetOrientation(wx.VERTICAL)
+        self._vert_min_size = self.GetMinSize()
         self.SetGripperVisible(False)
         self.SetOrientation(wx.HORIZONTAL)
+        # store the size in horizontal orientation, used to show drop hint
+        self._horz_min_size = self.GetMinSize()
 
-    def ExitFloating(self):
+    def ExitFloating(self, orientation):
         if self._enter_floating:
             self._enter_floating = False
-            if self.GetAGWWindowStyleFlag() != self._agw_style_before_floating:
-                # restore the agwStyle before enter floating
-                self.SetAGWWindowStyleFlag(self._agw_style_before_floating)
-                self.Realize()
+            self.SetOrientation(orientation)
             # this line shall be after SetAGWWindowStyleFlag as it will als
             # update it
             self.SetGripperVisible(True)
@@ -3891,7 +3911,8 @@ class AuiToolBar(wx.Control):
                 item = self._action_item
             else:
                 item = self.FindTool(eid)
-            self.RestoreMinizedPane(item)
+            # delay the call, so it will give _popup a chance to close properly
+            wx.CallAfter(self.RestoreMinizedPane, item)
         event.Skip()
 
     def OnLeftUp(self, event):

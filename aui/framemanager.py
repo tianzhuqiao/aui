@@ -805,6 +805,15 @@ class AuiPaneInfo(object):
 
         return self.minimize_mode
 
+    def GetOrientation(self):
+        """
+        Returns ``wx.VERTICAL`` if the pane is left/right docked,
+            otherwise ``wx.HORIZONTAL``
+        """
+
+        vertical = self.dock_direction in [AUI_DOCK_LEFT, AUI_DOCK_RIGHT]
+        return wx.VERTICAL if vertical else wx.HORIZONTAL
+
     def HasPinButton(self):
         """ Returns ``True`` if the pane displays a button to float the pane. """
 
@@ -2966,7 +2975,7 @@ class AuiFloatingFrame(wx.MiniFrame):
 
             if isinstance(self._pane_window, auibar.AuiToolBar):
                 self._pane_window.SetAuiManager(self._owner_mgr)
-                self._pane_window.ExitFloating()
+                self._pane_window.ExitFloating(wx.HORIZONTAL)
 
             # if we do not do this, then we can crash...
             if self._owner_mgr and self._owner_mgr._action_window == self:
@@ -4529,22 +4538,27 @@ class AuiManager(wx.EvtHandler):
          and new pane added to it as a page. (additionally, target can be any pane in
          an existing notebook)
          """
-
+        rtn = None
         if target in self._panes:
-            return self.AddPane4(window, arg1, target)
+            rtn = self.AddPane4(window, arg1, target)
 
-        if isinstance(arg1, int):
+        elif isinstance(arg1, int):
             # This Is Addpane2
             if arg1 is None:
                 arg1 = wx.LEFT
             if arg2 is None:
                 arg2 = ""
-            return self.AddPane2(window, arg1, arg2)
+            rtn = self.AddPane2(window, arg1, arg2)
         else:
             if isinstance(arg2, wx.Point):
-                return self.AddPane3(window, arg1, arg2)
+                rtn = self.AddPane3(window, arg1, arg2)
             else:
-                return self.AddPane1(window, arg1)
+                rtn = self.AddPane1(window, arg1)
+        if rtn:
+            pane = self.GetPane(window);
+            if pane.IsOk():
+                self.SwitchToolBarOrientation(pane)
+        return rtn
 
     def AddPane1(self, window, pane_info):
         """ See comments on :meth:`AddPane`. """
@@ -5188,7 +5202,7 @@ class AuiManager(wx.EvtHandler):
         # if they are still minimized in the new perspective.
         panes = list(self._panes)
         for pane in panes:
-            if pane.HasFlag(AuiPaneInfo.minimizeToolbar):
+            if pane.IsMinimized():
                 self.RestoreMinimizedPane(pane)
 
         # mark all panes currently managed as docked and hidden
@@ -6128,7 +6142,7 @@ class AuiManager(wx.EvtHandler):
             p.window.Reparent(self._frame)
             if isinstance(p.window, auibar.AuiToolBar):
                 p.window.SetAuiManager(self)
-                p.window.ExitFloating()
+                p.window.ExitFloating(p.GetOrientation())
                 s = p.window.GetMinSize()
                 p.BestSize(s)
 
@@ -6220,7 +6234,6 @@ class AuiManager(wx.EvtHandler):
 
                 if p.IsToolbar():
                     self.SwitchToolBarOrientation(p)
-                    p.best_size = p.window.GetBestSize()
 
                 if p.window and not p.IsNotebookPage() and p.window.IsShown() != p.IsShown():
                     p.window.Show(p.IsShown())
@@ -7192,8 +7205,6 @@ class AuiManager(wx.EvtHandler):
         if allowed:
             target = new_pos
 
-            if target.IsToolbar():
-                self.SwitchToolBarOrientation(target)
 
         return allowed, target
 
@@ -7213,10 +7224,8 @@ class AuiManager(wx.EvtHandler):
             return pane
 
         toolBar = pane.window
-        direction = pane.dock_direction
-        vertical = direction in [AUI_DOCK_LEFT, AUI_DOCK_RIGHT]
-        orientation = wx.VERTICAL if vertical else wx.HORIZONTAL
-        toolBar.SetOrientation(orientation)
+        toolBar.ExitFloating(pane.GetOrientation())
+        toolBar.SetOrientation(pane.GetOrientation())
         s = pane.window.GetMinSize()
         pane.BestSize(s)
 
@@ -7294,7 +7303,7 @@ class AuiManager(wx.EvtHandler):
         drop.Show()
 
         # Check to see if the toolbar has been dragged out of the window
-        if CheckOutOfWindow(self._frame, pt):
+        if not drop.IsFloating() and CheckOutOfWindow(self._frame, pt):
             if self._agwFlags & AUI_MGR_ALLOW_FLOATING and drop.IsFloatable():
                 drop.Float()
 
@@ -7894,10 +7903,10 @@ class AuiManager(wx.EvtHandler):
         """
         Calculates the drop hint rectangle.
 
-        The method first calls :meth:`DoDrop` to determine the exact position the pane would
-        be at were if dropped. If the pane would indeed become docked at the
-        specified drop point, the the rectangle hint will be returned in
-        screen coordinates. Otherwise, an empty rectangle is returned.
+        The method first calls :meth:`DoDrop` to determine the exact position
+        the pane would be at were if dropped. If the pane would indeed become
+        docked at the specified drop point, the rectangle hint will be returned
+        in client coordinates. Otherwise, an empty rectangle is returned.
 
         :param wx.Window `pane_window`: it is the window pointer of the pane being dragged;
         :param wx.Point `pt`: is the mouse position, in client coordinates;
@@ -7975,16 +7984,27 @@ class AuiManager(wx.EvtHandler):
                 if p.name == sought and p.IsFloating():
                     return wx.Rect(p.floating_pos, p.floating_size)
 
-        if rect.IsEmpty():
-            return rect
-
-        # actually show the hint rectangle on the screen
-        rect.x, rect.y = self._frame.ClientToScreen((rect.x, rect.y))
-        if self._frame.GetLayoutDirection() == wx.Layout_RightToLeft:
-            # Mirror rectangle in RTL mode
-            rect.x -= rect.GetWidth()
-
         return rect
+
+    def ShowHintRect(self, rect):
+        """
+        If rect is not empty, show it by calling :meth:`ShowHint`, otherwise it
+        hides any hint rectangle currently shown.
+
+        :param wx.Rect `rect`: the hint rect in client coordinates;
+        """
+
+        if rect.IsEmpty():
+            self.HideHint()
+            self._hint_rect = wx.Rect()
+        else:
+            # actually show the hint rectangle on the screen
+            rect.x, rect.y = self._frame.ClientToScreen((rect.x, rect.y))
+            if self._frame.GetLayoutDirection() == wx.Layout_RightToLeft:
+                # Mirror rectangle in RTL mode
+                rect.x -= rect.GetWidth()
+            self.ShowHint(rect)
+            self._hint_rect = wx.Rect(*rect)
 
     def DrawHintRect(self, pane_window, pt, offset):
         """
@@ -7999,13 +8019,7 @@ class AuiManager(wx.EvtHandler):
         """
 
         rect = self.CalculateHintRect(pane_window, pt, offset)
-
-        if rect.IsEmpty():
-            self.HideHint()
-            self._hint_rect = wx.Rect()
-        else:
-            self.ShowHint(rect)
-            self._hint_rect = wx.Rect(*rect)
+        self.ShowHintRect(rect)
 
     def GetPartSizerRect(self, uiparts):
         """
@@ -8430,8 +8444,8 @@ class AuiManager(wx.EvtHandler):
 
                 win_rect = paneInfo.frame.GetRect()
                 paneInfo.Dock()
-                if paneInfo.IsToolbar():
-                    paneInfo = self.SwitchToolBarOrientation(paneInfo)
+                if paneInfo.IsToolbar() and  isinstance(paneInfo.window, auibar.AuiToolBar):
+                    paneInfo.window.ExitFloating(paneInfo.GetOrientation())
 
                 e = self.FireEvent(wxEVT_AUI_PANE_DOCKED, paneInfo, canVeto=False)
 
@@ -9456,7 +9470,7 @@ class AuiManager(wx.EvtHandler):
         # is the pane dockable?
         if self.CanDockPanel(pane):
             # do the drop calculation
-            ret, pane = self.DoDrop(self._docks, self._panes, pane, clientPt, self._toolbar_action_offset)
+            ret, new_pane = self.DoDrop(self._docks, self._panes, pane, clientPt, self._toolbar_action_offset)
 
         # update floating position
         if pane.IsFloating():
@@ -9477,9 +9491,34 @@ class AuiManager(wx.EvtHandler):
             if self._agwFlags & AUI_MGR_TRANSPARENT_DRAG:
                 pane.frame.SetTransparent(150)
 
-        self._panes[indx] = pane
-        if ret and wasFloating != pane.IsFloating() or (ret and not wasFloating):
+        if ret and not pane.IsFloating():
+            # floating the toolbar or move it to the new location
+            self._panes[indx] = new_pane
+            self.SwitchToolBarOrientation(new_pane)
             wx.CallAfter(self.Update)
+        elif ret and wasFloating:
+            # show hint rect to dock a toolbar
+            rect = wx.Rect()
+            if not new_pane.IsFloating():
+                # it is ready to dock the toolbar
+                # calculate the rect if it will be docked there
+                docks, panes = CopyDocksAndPanes2(self._docks, self._panes)
+                panes[indx] = new_pane
+                if new_pane.dock_direction in [AUI_DOCK_LEFT, AUI_DOCK_RIGHT]:
+                    new_pane.BestSize(new_pane.window.GetVertMinSize())
+                else:
+                    new_pane.BestSize(new_pane.window.GetHorzMinSize())
+                sizer, panes, docks, uiparts = self.LayoutAll(panes, docks, [], True, False)
+                client_size = self._frame.GetClientSize()
+                sizer.SetDimension(0, 0, client_size.x, client_size.y)
+                sizer.Layout()
+                for part in uiparts:
+                    if part.pane and part.pane.name == new_pane.name:
+                        rect.Union(wx.Rect(part.sizer_item.GetPosition(),
+                                   part.sizer_item.GetSize()))
+                sizer.Destroy()
+
+            self.ShowHintRect(rect)
 
         # when release the button out of the window.
         # TODO: a better fix is needed.
@@ -9523,6 +9562,7 @@ class AuiManager(wx.EvtHandler):
         :param `event`: a :class:`MouseEvent` to be processed.
         """
 
+        self.ShowHintRect(wx.Rect())
         isPoint = False
         if isinstance(eventOrPt, wx.Point):
             clientPt = self._frame.ScreenToClient(eventOrPt)
@@ -9542,6 +9582,15 @@ class AuiManager(wx.EvtHandler):
             if pane.frame._transparent != pane.transparent or self._agwFlags & AUI_MGR_TRANSPARENT_DRAG:
                 pane.frame.SetTransparent(pane.transparent)
                 pane.frame._transparent = pane.transparent
+
+            if self.CanDockPanel(pane):
+                # do the drop calculation
+                ret, new_pane = self.DoDrop(self._docks, self._panes, pane, clientPt, self._toolbar_action_offset)
+                if ret and not new_pane.IsFloating():
+                    # drop the toolbar
+                    indx = self._panes.index(pane)
+                    self._panes[indx] = new_pane
+                    pane = new_pane
 
         # save the new positions
         docks = FindDocks(self._docks, pane.dock_direction, pane.dock_layer, pane.dock_row)

@@ -9260,7 +9260,7 @@ class AuiManager(wx.EvtHandler):
         action_offset = screenPt - framePos
 
         # is the pane dockable?
-        if not self.CanDockPanel(pane):
+        if not self.CanDockPanel(pane) or (self._frame and self._frame.IsIconized()):
             self.HideHint()
             ShowDockingGuides(self._guides, False)
             return
@@ -9304,6 +9304,11 @@ class AuiManager(wx.EvtHandler):
         if not pane.IsOk():
             raise Exception("Pane window not found")
 
+        if not self.CanDockPanel(pane) or (self._frame and self._frame.IsIconized()):
+            self.HideHint()
+            ShowDockingGuides(self._guides, False)
+            return
+
         # Draw a hint for where the window will be moved.
         if isinstance(eventOrPt, wx.Point):
             pt = wx.Point(*eventOrPt)
@@ -9333,6 +9338,12 @@ class AuiManager(wx.EvtHandler):
         paneInfo = self.GetPane(self._action_window)
         if not paneInfo.IsOk():
             raise Exception("Pane window not found")
+
+        if self._frame and self._frame.IsIconized():
+            # if the main frame is iconized, not try to dock
+            self.HideHint()
+            ShowDockingGuides(self._guides, False)
+            return
 
         ret = False
 
@@ -9403,6 +9414,12 @@ class AuiManager(wx.EvtHandler):
 
         # Hide the hint as it is no longer needed.
         self.HideHint()
+
+        if self._frame and self._frame.IsIconized():
+            # if the main frame is iconized, not try to dock
+            self.HideHint()
+            ShowDockingGuides(self._guides, False)
+            return
 
         # is the pane dockable?
         if self.CanDockPanel(paneInfo):
@@ -9491,6 +9508,7 @@ class AuiManager(wx.EvtHandler):
             if self._agwFlags & AUI_MGR_TRANSPARENT_DRAG:
                 pane.frame.SetTransparent(150)
 
+        rect = wx.Rect()
         if ret and not pane.IsFloating():
             # floating the toolbar or move it to the new location
             self._panes[indx] = new_pane
@@ -9498,8 +9516,7 @@ class AuiManager(wx.EvtHandler):
             wx.CallAfter(self.Update)
         elif ret and wasFloating:
             # show hint rect to dock a toolbar
-            rect = wx.Rect()
-            if not new_pane.IsFloating():
+            if not new_pane.IsFloating() and not (self._frame and self._frame.IsIconized()):
                 # it is ready to dock the toolbar
                 # calculate the rect if it will be docked there
                 docks, panes = CopyDocksAndPanes2(self._docks, self._panes)
@@ -9518,7 +9535,7 @@ class AuiManager(wx.EvtHandler):
                                    part.sizer_item.GetSize()))
                 sizer.Destroy()
 
-            self.ShowHintRect(rect)
+        self.ShowHintRect(rect)
 
         # when release the button out of the window.
         # TODO: a better fix is needed.
@@ -9576,6 +9593,12 @@ class AuiManager(wx.EvtHandler):
         pane = self.GetPane(self._action_window)
         if not pane.IsOk():
             raise Exception("Pane window not found")
+
+        if self._frame and self._frame.IsIconized():
+            # if the main frame is iconized, not try to dock
+            self.HideHint()
+            ShowDockingGuides(self._guides, False)
+            return
 
         if pane.IsFloating() and pane.frame is not None:
             pane.floating_pos = pane.frame.GetPosition()

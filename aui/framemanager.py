@@ -8372,6 +8372,9 @@ class AuiManager(wx.EvtHandler):
 
         w, h = self._frame.GetClientSize()
 
+        if w <= 0 or h <= 0:
+            return
+
         # Figure out which dc to use; if one
         # has been specified, use it, otherwise
         # make a client dc

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=67.6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aui2"
+version = "0.1.0"
+authors = [
+  { name="Tianzhu Qiao", email="tq@feiyilin.com" },
+]
+license = {file = "LICENSE"}
+description='wxPython Advanced User Interface library 2'
+readme = "README_pip.md"
+requires-python = ">=3.0"
+classifiers = [
+    "Operating System :: OS Independent",
+]
+dependencies = [
+          'wxpython>=4.2.1'
+      ]
+
+[project.urls]
+"Homepage" = "https://github.com/tianzhuqiao/aui"
+
+[tool.setuptools.packages]
+find = {}
+
+[options]
+include_package_data = true

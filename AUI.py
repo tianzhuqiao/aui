@@ -24,8 +24,8 @@ except:
 sys.path.append(os.path.split(dirName)[0])
 
 try:
-    import aui
-    import aui.aui_switcherdialog as ASD
+    import aui2 as aui
+    import aui2.aui_switcherdialog as ASD
 except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.aui as aui
     from wx.lib.agw.aui import aui_switcherdialog as ASD

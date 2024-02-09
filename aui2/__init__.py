@@ -284,6 +284,7 @@ Version 1.3.
 __author__ = "Andrea Gavana <andrea.gavana@gmail.com>"
 __date__ = "31 March 2009"
 
+from .version import __version__
 
 from .aui_constants import *
 from .aui_utilities import *

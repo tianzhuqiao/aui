@@ -30,5 +30,5 @@ $ git submodule update
 import aui2 as aui
 ```
 ### Screenshots
-![image](./images/light.png)
-![image](./images/dark.png)
+<img src="https://github.com/tianzhuqiao/aui/raw/main/images/light.png"  width="912" height="712"></img>
+<img src="https://github.com/tianzhuqiao/aui/raw/main/images/dark.png"  width="912" height="712"></img>

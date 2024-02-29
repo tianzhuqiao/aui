@@ -4181,8 +4181,7 @@ class AuiManager(wx.EvtHandler):
                 else:
                     self.ShowPane(notebook, False)
 
-            else:
-                p.Show(show)
+            p.Show(show)
 
             if p.frame:
                 p.frame.Raise()
@@ -7066,6 +7065,8 @@ class AuiManager(wx.EvtHandler):
                 if paneInfo.IsMaximized():
                     self.RestorePane(paneInfo)
                 paneInfo.Float()
+                # always shows the pane
+                paneInfo.Show()
 
                 # The call to Update may result in
                 # the notebook that generated this

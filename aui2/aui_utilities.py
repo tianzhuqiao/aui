@@ -144,7 +144,10 @@ def ChopText(dc, text, max_size):
         if x < max_size:
             break
 
-    ret = text[0:last_good_length] + "..."
+    if last_good_length > 0:
+        ret = text[0:last_good_length] + "..."
+    else:
+        ret = ""
     return ret
 
 

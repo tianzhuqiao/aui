@@ -575,9 +575,9 @@ class AuiDefaultDockArt(object):
             if pane.HasCaptionLeft():
                 bmp = wx.Bitmap(pane.icon).ConvertToImage().Rotate90(clockwise=False)
                 bmp.SetScaleFactor(pane.icon.GetScaleFactor())
-                dc.DrawBitmap(bmp.ConvertToBitmap(), rect.x+(rect.width-pane.icon.GetLogicalWidth())//2, rect.y+rect.height-2-pane.icon.GetLogicalHeight(), True)
+                dc.DrawBitmap(bmp.ConvertToBitmap(), rect.x+(rect.width-int(pane.icon.GetLogicalWidth()))//2, rect.y+rect.height-2-int(pane.icon.GetLogicalHeight()), True)
             else:
-                dc.DrawBitmap(pane.icon, rect.x+2, rect.y+(rect.height-pane.icon.GetLogicalHeight())//2, True)
+                dc.DrawBitmap(pane.icon, rect.x+2, rect.y+(rect.height-int(pane.icon.GetLogicalHeight()))//2, True)
 
 
     def DrawCaption(self, dc, window, text, rect, pane):
@@ -615,9 +615,9 @@ class AuiDefaultDockArt(object):
         caption_offset = 0
         if pane.icon:
             if captionLeft:
-                caption_offset += pane.icon.GetLogicalHeight() + 3
+                caption_offset += int(pane.icon.GetLogicalHeight()) + 3
             else:
-                caption_offset += pane.icon.GetLogicalWidth() + 3
+                caption_offset += int(pane.icon.GetLogicalWidth()) + 3
 
             self.DrawIcon(dc, rect, pane)
 
@@ -759,10 +759,10 @@ class AuiDefaultDockArt(object):
 
         if isVertical:
             old_x = rect.x
-            rect.x = rect.x + (rect.width//2) - (bmp.GetLogicalWidth()//2)
+            rect.x = rect.x + (rect.width//2) - int(bmp.GetLogicalWidth()//2)
             rect.width = old_x + rect.width - rect.x - 1
         else:
-            rect.y = rect.y + (rect.height//2) - (bmp.GetLogicalHeight()//2)
+            rect.y = rect.y + (rect.height//2) - int(bmp.GetLogicalHeight()//2)
 
         if button_state == AUI_BUTTON_STATE_PRESSED:
             rect.x += 1
@@ -1046,9 +1046,9 @@ class ModernDockArt(AuiDefaultDockArt):
         caption_offset = 0
         if pane.icon:
             if captionLeft:
-                caption_offset += pane.icon.GetLogicalHeight() + 3
+                caption_offset += int(pane.icon.GetLogicalHeight()) + 3
             else:
-                caption_offset += pane.icon.GetLogicalWidth() + 3
+                caption_offset += int(pane.icon.GetLogicalWidth()) + 3
 
             self.DrawIcon(dc, rect, pane)
 

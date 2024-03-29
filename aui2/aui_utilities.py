@@ -577,7 +577,7 @@ def RescaleScreenShot(bmp, thumbnail_size=200):
     :param integer `thumbnail_size`: the maximum size of every page thumbnail.
     """
 
-    bmpW, bmpH = bmp.GetLogicalWidth(), bmp.GetLogicalHeight()
+    bmpW, bmpH = int(bmp.GetLogicalWidth()), int(bmp.GetLogicalHeight())
     img = bmp.ConvertToImage()
 
     newW, newH = bmpW, bmpH

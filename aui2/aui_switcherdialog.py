@@ -621,7 +621,7 @@ class SwitcherItems(object):
                    and item.GetBitmap().GetLogicalHeight() <= 16:
                     x -= textMarginX
                     dc.DrawBitmap(item.GetBitmap(), x, item.GetRect().y + \
-                                  (item.GetRect().height - item.GetBitmap().GetLogicalHeight())//2,
+                                  (item.GetRect().height - int(item.GetBitmap().GetLogicalHeight()))//2,
                                   True)
                     x += 16 + textMarginX
                 #x += textMarginX

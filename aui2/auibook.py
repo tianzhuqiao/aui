@@ -164,7 +164,7 @@ class TabTextCtrl(ExpandoTextCtrl):
         image = tab.bitmap
 
         if image.IsOk():
-            image_w, image_h = image.GetLogicalWidth(), image.GetLogicalHeight()
+            image_w, image_h = int(image.GetLogicalWidth()), int(image.GetLogicalHeight())
             image_w += 6
 
         dc = wx.ClientDC(self._owner)
@@ -864,7 +864,7 @@ class TabNavigatorWindow(wx.Dialog):
         # Draw the caption title and place the bitmap
         # get the bitmap optimal position, and draw it
         bmpPt, txtPt = wx.Point(), wx.Point()
-        bmpPt.y = (rect.height - self._props.Icon.GetLogicalHeight())//2
+        bmpPt.y = (rect.height - int(self._props.Icon.GetLogicalHeight()))//2
         bmpPt.x = 3
         mem_dc.DrawBitmap(self._props.Icon, bmpPt.x, bmpPt.y, True)
 
@@ -874,7 +874,7 @@ class TabNavigatorWindow(wx.Dialog):
         mem_dc.SetFont(font)
         fontHeight = mem_dc.GetCharHeight()
 
-        txtPt.x = bmpPt.x + self._props.Icon.GetLogicalWidth() + 4
+        txtPt.x = bmpPt.x + int(self._props.Icon.GetLogicalWidth()) + 4
         txtPt.y = (rect.height - fontHeight)//2
         text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
         mem_dc.SetTextForeground(text_colour)
@@ -6166,7 +6166,7 @@ class AuiNotebook(wx.Panel):
 
             page.enabled = False
             if count == 0:
-                il = wx.ImageList(bmp.GetLogicalWidth(), bmp.GetLogicalHeight(), True)
+                il = wx.ImageList(int(bmp.GetLogicalWidth()), int(bmp.GetLogicalHeight()), True)
 
             il.Add(bmp)
             count += 1

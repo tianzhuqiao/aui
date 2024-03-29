@@ -23,12 +23,8 @@ except:
 
 sys.path.append(os.path.split(dirName)[0])
 
-try:
-    import aui2 as aui
-    import aui2.aui_switcherdialog as ASD
-except ImportError: # if it's not there locally, try the wxPython lib.
-    import wx.lib.agw.aui as aui
-    from wx.lib.agw.aui import aui_switcherdialog as ASD
+import aui2 as aui
+import aui2.aui_switcherdialog as ASD
 
 import random
 import images
@@ -1101,7 +1097,7 @@ class AuiFrame(wx.Frame):
 
     def GetBitmap(self, bid, size):
         scale_factor = self.GetContentScaleFactor()
-        bmp = wx.ArtProvider.GetBitmap(bid, size=(size[0]*scale_factor, size[1]*scale_factor))
+        bmp = wx.ArtProvider.GetBitmap(bid, size=(int(size[0]*scale_factor), int(size[1]*scale_factor)))
         bmp.SetScaleFactor(scale_factor)
         return bmp
 

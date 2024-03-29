@@ -287,7 +287,7 @@ def DrawMACCloseButton(colour, backColour=None, scale_factor=1):
     :param wx.Colour `backColour`: the optional background colour for the circle.
     """
 
-    bmp = wx.Bitmap.FromRGBA(16*scale_factor, 16*scale_factor)
+    bmp = wx.Bitmap.FromRGBA(int(16*scale_factor), int(16*scale_factor))
     bmp.SetScaleFactor(scale_factor)
     dc = wx.MemoryDC()
     dc.SelectObject(bmp)
@@ -453,7 +453,7 @@ class TabDragImage(wx.DragImage):
         rect = wx.Rect(0, 0, tab_width, tab_height)
 
         scale_factor = notebook.GetDPIScaleFactor()
-        bitmap = wx.Bitmap(tab_width*scale_factor+1, tab_height*scale_factor+1)
+        bitmap = wx.Bitmap(int(tab_width*scale_factor)+1, int(tab_height*scale_factor)+1)
         bitmap.SetScaleFactor(scale_factor)
         memory.SelectObject(bitmap)
 
@@ -577,7 +577,7 @@ def RescaleScreenShot(bmp, thumbnail_size=200):
     :param integer `thumbnail_size`: the maximum size of every page thumbnail.
     """
 
-    bmpW, bmpH = bmp.GetLogicalWidth(), bmp.GetLogicalHeight()
+    bmpW, bmpH = int(bmp.GetLogicalWidth()), int(bmp.GetLogicalHeight())
     img = bmp.ConvertToImage()
 
     newW, newH = bmpW, bmpH

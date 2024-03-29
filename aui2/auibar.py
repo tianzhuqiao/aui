@@ -1083,8 +1083,8 @@ class AuiDefaultToolBarArt(object):
             button_rect = wx.Rect(rect.x, rect.y, rect.width, rect.height-BUTTON_DROPDOWN_WIDTH)
             dropdown_rect = wx.Rect(rect.x, rect.y+rect.height-BUTTON_DROPDOWN_WIDTH-1, rect.width, BUTTON_DROPDOWN_WIDTH+1)
 
-        dropbmp_width = self._button_dropdown_bmp.GetLogicalWidth()
-        dropbmp_height = self._button_dropdown_bmp.GetLogicalHeight()
+        dropbmp_width = int(self._button_dropdown_bmp.GetLogicalWidth())
+        dropbmp_height = int(self._button_dropdown_bmp.GetLogicalHeight())
         if not horizontal:
             tmp = dropbmp_width
             dropbmp_width = dropbmp_height
@@ -1211,8 +1211,8 @@ class AuiDefaultToolBarArt(object):
 
         width, height = 0, 0
         if item.GetBitmap().IsOk():
-            width = item.GetBitmap().GetLogicalWidth()
-            height = item.GetBitmap().GetLogicalHeight()
+            width = int(item.GetBitmap().GetLogicalWidth())
+            height = int(item.GetBitmap().GetLogicalHeight())
 
         if self._agwFlags & AUI_TB_TEXT:
 
@@ -1365,8 +1365,8 @@ class AuiDefaultToolBarArt(object):
                 dc.SetBrush(wx.Brush(light_gray_bg))
                 dc.DrawRectangle(rect.x+1, rect.y, rect.width, rect.height)
 
-        x = rect.x + 1 + (rect.width-self._overflow_bmp.GetLogicalWidth())//2
-        y = rect.y + 1 + (rect.height-self._overflow_bmp.GetLogicalHeight())//2
+        x = rect.x + 1 + int(rect.width-self._overflow_bmp.GetLogicalWidth())//2
+        y = rect.y + 1 + int(rect.height-self._overflow_bmp.GetLogicalHeight())//2
         dc.DrawBitmap(self._overflow_bmp, x, y, True)
 
 
@@ -1435,8 +1435,8 @@ class AuiDefaultToolBarArt(object):
         text_right = self._text_orientation == AUI_TBTOOL_TEXT_RIGHT
         bmp_width, bmp_height = 0, 0
         if item.GetBitmap().IsOk():
-            bmp_width = item.GetBitmap().GetLogicalWidth()
-            bmp_height = item.GetBitmap().GetLogicalHeight()
+            bmp_width = int(item.GetBitmap().GetLogicalWidth())
+            bmp_height = int(item.GetBitmap().GetLogicalHeight())
 
         if self._agwFlags & AUI_TB_TEXT:
             dc.SetFont(self._font)

@@ -530,6 +530,7 @@ class AuiPaneInfo(object):
         self.max_size = wx.Size(-1, -1)
         self.dock_proportion = 0
         self.caption = ""
+        self.tooltip = ""
         self.buttons = []
         self.name = ""
         self.icon = wx.NullIcon
@@ -865,6 +866,16 @@ class AuiPaneInfo(object):
         """
 
         self.caption = caption
+        return self
+
+    def Tooltip(self, tooltip):
+        """
+        Sets the tooltip of the pane.
+
+        :param string `tooltip`: a string specifying the pane tooltip.
+        """
+
+        self.tooltip = tooltip
         return self
 
     def Left(self):
@@ -2813,6 +2824,7 @@ class AuiFloatingFrame(wx.MiniFrame):
 
         contained_pane.name = pane.name
         contained_pane.caption = pane.caption
+        contained_pane.tooltip = pane.tooltip
         contained_pane.window = pane.window
         contained_pane.frame = pane.frame
         contained_pane.state = pane.state
@@ -3369,6 +3381,7 @@ def CopyDocksAndPanes2(src_docks, src_panes):
         dest_panes.append(AuiPaneInfo())
         dest_panes[ii].name = src_panes[ii].name
         dest_panes[ii].caption = src_panes[ii].caption
+        dest_panes[ii].tooltip = src_panes[ii].tooltip
         dest_panes[ii].window = src_panes[ii].window
         dest_panes[ii].frame = src_panes[ii].frame
         dest_panes[ii].state = src_panes[ii].state
@@ -5107,6 +5120,7 @@ class AuiManager(wx.EvtHandler):
 
         result = {"name": EscapeDelimiters(pane.name),
                   "caption": EscapeDelimiters(pane.caption),
+                  "tooltip": EscapeDelimiters(pane.tooltip),
                   "state": pane.state,
                   "dock_direction": pane.dock_direction,
                   "dock_layer": pane.dock_layer,
@@ -6336,6 +6350,7 @@ class AuiManager(wx.EvtHandler):
                 else:
 
                     notebook.SetPageText(page_id, title)
+                    notebook.SetPageTooltip(page_id, paneInfo.tooltip)
                     notebook.SetPageBitmap(page_id, paneInfo.icon)
 
                 notebook.DoSizing()
@@ -6353,7 +6368,7 @@ class AuiManager(wx.EvtHandler):
             for pane in sorted_pnp:
                 title = (pane.caption == "" and [pane.name] or [pane.caption])[0]
                 pane.window.Reparent(notebook)
-                notebook.AddPage(pane.window, title, True, pane.icon)
+                notebook.AddPage(pane.window, title, True, pane.icon, tooltip=pane.tooltip)
             notebook.DoSizing()
 
         # Delete empty notebooks, and convert notebooks with 1 page to
@@ -7159,7 +7174,7 @@ class AuiManager(wx.EvtHandler):
             if paneInfo.IsOk():
                 notebookRoot = GetNotebookRoot(self._panes, paneInfo.notebook_id)
                 if notebookRoot:
-                    notebookRoot.Caption(paneInfo.caption)
+                    notebookRoot.Caption(paneInfo.caption).Tooltip(paneInfo.tooltip)
                     self.RefreshCaptions()
 
         event.Skip()
@@ -7263,6 +7278,7 @@ class AuiManager(wx.EvtHandler):
         drop = AuiPaneInfo()
         drop.name = target.name
         drop.caption = target.caption
+        drop.tooltip = target.tooltip
         drop.window = target.window
         drop.frame = target.frame
         drop.state = target.state
@@ -8051,7 +8067,8 @@ class AuiManager(wx.EvtHandler):
                       pane.floating_pos, pane.floating_size, pane.best_size,
                       pane.min_size, pane.max_size, pane.caption, pane.name,
                       pane.buttons, pane.rect, pane.icon, pane.notebook_id,
-                      pane.transparent, pane.snapped, pane.minimize_mode, pane.minimize_target])
+                      pane.transparent, pane.snapped, pane.minimize_mode, pane.minimize_target,
+                      pane.tooltip])
 
         return attrs
 
@@ -8086,6 +8103,7 @@ class AuiManager(wx.EvtHandler):
         pane.snapped = attrs[20]
         pane.minimize_mode = attrs[21]
         pane.minimize_target = attrs[22]
+        pane.tooltip = attrs[23]
 
         return pane
 
@@ -8352,7 +8370,10 @@ class AuiManager(wx.EvtHandler):
                 art.DrawBackground(dc, self._frame, part.orientation, part.rect)
 
             elif ptype == AuiDockUIPart.typeCaption:
-                art.DrawCaption(dc, self._frame, part.pane.caption, part.rect, part.pane)
+                caption = part.pane.caption
+                if part.pane.tooltip:
+                    caption = f"{caption} ({part.pane.tooltip})"
+                art.DrawCaption(dc, self._frame, caption, part.rect, part.pane)
 
             elif ptype == AuiDockUIPart.typeGripper:
                 art.DrawGripper(dc, self._frame, part.rect, part.pane)

@@ -7916,6 +7916,32 @@ class AuiManager(wx.EvtHandler):
                 self._frame.Refresh(True, part.rect)
                 self._frame.Update()
 
+    def SetPaneTitle(self, pane, title, tooltip=None):
+        if pane:
+            info = self.GetPane(pane)
+            if info is None or not info.IsOk() or info.caption == title:
+                return
+
+            info.Caption(title)
+            if tooltip is not None:
+                info.Tooltip(tooltip)
+
+            window = info.window
+            parent = window.GetParent()
+
+            if parent is None:
+                return
+            if info.IsNotebookPage() and isinstance(parent, auibook.AuiNotebook):
+                # update notebook page
+                idx = parent.GetPageIndex(window)
+                parent.SetPageText(idx, info.caption)
+                parent.SetPageTooltip(idx, info.tooltip)
+                if idx == parent.GetSelection():
+                    page_info = self.GetPane(parent)
+                    page_info.Caption(info.caption).Tooltip(info.tooltip)
+            self.RefreshCaptions()
+            parent.Update()
+
     def CalculateHintRect(self, pane_window, pt, offset):
         """
         Calculates the drop hint rectangle.

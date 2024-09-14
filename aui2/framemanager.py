@@ -5211,6 +5211,12 @@ class AuiManager(wx.EvtHandler):
         except:
             return False
 
+        panes = [pane.get('name', '') for pane in layout['panes']]
+        for pane in self._panes:
+            if pane.name not in panes:
+                # pane not in perspective, ignore the perspective
+                return False
+
         # delete the generated minimized toolbar panes, as they will be re-created
         # if they are still minimized in the new perspective.
         panes = list(self._panes)

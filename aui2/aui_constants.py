@@ -2491,9 +2491,6 @@ ITEM_RADIO = wx.ITEM_RADIO
 ID_RESTORE_FRAME = wx.ID_HIGHEST + 10000
 """ Identifier for restoring a minimized pane. """
 
-BUTTON_DROPDOWN_WIDTH = 10
-""" Width of the drop-down button in AuiToolBar. """
-
 DISABLED_TEXT_GREY_HUE = 153
 """ Hue text colour for the disabled text in AuiToolBar. """
 DISABLED_TEXT_COLOUR = wx.Colour(DISABLED_TEXT_GREY_HUE,
@@ -2535,6 +2532,8 @@ AUI_TBART_GRIPPER_SIZE = 1
 """ Gripper size in AuiToolBar. """
 AUI_TBART_OVERFLOW_SIZE = 2
 """ Overflow button size in AuiToolBar. """
+AUI_TBART_DROPDOWN_SIZE = 3
+""" Dropdown button size in AuiToolBar. """
 
 # AuiToolBar text orientation
 AUI_TBTOOL_TEXT_LEFT = 0     # unused/unimplemented

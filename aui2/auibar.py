@@ -760,6 +760,7 @@ class AuiDefaultToolBarArt(object):
         self._orientation = AUI_TBTOOL_HORIZONTAL
         self._gripper_size = 7
         self._overflow_size = 16
+        self._dropdown_size = 10
 
 
     def SetDefaultColours(self, base_colour=None):
@@ -784,24 +785,70 @@ class AuiDefaultToolBarArt(object):
 
         self._highlight_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
 
-        button_dropdown_bits = b"\xe0\xf1\xfb"
+        button_dropdown_bits = b"\x80\xc1\xe3\xf7"
         overflow_bits = b"\x80\xff\x80\xc1\xe3\xf7"
 
         active_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
         disabled_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-        self._button_dropdown_bmp = BitmapFromBits(button_dropdown_bits, 5, 3, active_colour)
-        self._disabled_button_dropdown_bmp = BitmapFromBits(button_dropdown_bits, 5, 3,
-                                                            disabled_colour)
-        self._overflow_bmp = BitmapFromBits(overflow_bits, 7, 6, active_colour)
-        self._disabled_overflow_bmp = BitmapFromBits(overflow_bits, 7, 6, disabled_colour)
+        self.SetDropDownBitmap(BitmapFromBits(button_dropdown_bits, 7, 4, active_colour),
+                               BitmapFromBits(button_dropdown_bits, 7, 4, disabled_colour))
+        self.SetOverflowBitmap(BitmapFromBits(overflow_bits, 7, 6, active_colour ),
+                               BitmapFromBits(overflow_bits, 7, 6, disabled_colour))
 
         self._font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
 
+    def SetDropDownBitmap(self, bitmap, disabled_bitmap):
+        """
+        Sets the :class:`AuiDefaultToolBarArt` dropdown bitmap.
+
+        :param wx.Bitmap `bitmap`: the bitmap used for displaying dropdown button.
+        :param wx.Bitmap `disabled_bitmap`: the bitmap used for displaying dropdown button when disabled.
+        """
+        if not bitmap.IsOk() or not disabled_bitmap.IsOk():
+            return
+        self._button_dropdown_bmp = bitmap
+        self._disabled_button_dropdown_bmp = disabled_bitmap
+        self._dropdown_size = int(max(self._button_dropdown_bmp.GetLogicalWidth() + 4, 10))
+
+    def SetOverflowBitmap(self, bitmap, disabled_bitmap):
+        """
+        Sets the :class:`AuiDefaultToolBarArt` overflow bitmap.
+
+        :param wx.Bitmap `bitmap`: the bitmap used for displaying toolbar overflow button.
+        :param wx.Bitmap `disabled_bitmap`: the bitmap used for displaying toolbar overflow button when disabled.
+        """
+        if not bitmap.IsOk() or not disabled_bitmap.IsOk():
+            return
+        self._overflow_bmp = bitmap
+        self._disabled_overflow_bmp = disabled_bitmap
+        self._overflow_size = int(max(self._overflow_bmp.GetLogicalWidth() + 4, 16))
 
     def Clone(self):
         """ Clones the :class:`AuiDefaultToolBarArt` art. """
 
-        return AuiDefaultToolBarArt()
+        art = AuiDefaultToolBarArt()
+
+        self._agwFlags = self._agwFlags
+        self._text_orientation = self._text_orientation
+
+        art._separator_size = self._separator_size
+        art._orientation = self._orientation
+        art._gripper_size = self._gripper_size
+        art._overflow_size = self._overflow_size
+        art._dropdown_size = self._dropdown_size
+        art._font = self._font
+        art._button_dropdown_bmp = self._button_dropdown_bmp
+        art._disabled_button_dropdown_bmp = self._disabled_button_dropdown_bmp
+        art._overflow_bmp = self._overflow_bmp
+        art._disabled_overflow_bmp = self._overflow_bmp
+
+        art._base_colour = self._base_colour
+        art._gripper_pen1 = art._gripper_pen1
+        art._gripper_pen2 = art._gripper_pen2
+        art._gripper_pen3 = art._gripper_pen3
+        art._highlight_colour = self._highlight_colour
+
+        return art
 
 
     def SetAGWFlags(self, agwFlags):
@@ -1071,17 +1118,17 @@ class AuiDefaultToolBarArt(object):
 
         dropbmp_x = dropbmp_y = 0
 
-        button_rect = wx.Rect(rect.x, rect.y, rect.width-BUTTON_DROPDOWN_WIDTH, rect.height)
-        dropdown_rect = wx.Rect(rect.x+rect.width-BUTTON_DROPDOWN_WIDTH-1, rect.y, BUTTON_DROPDOWN_WIDTH+1, rect.height)
+        button_rect = wx.Rect(rect.x, rect.y, rect.width-self._dropdown_size, rect.height)
+        dropdown_rect = wx.Rect(rect.x+rect.width-self._dropdown_size-1, rect.y, self._dropdown_size+1, rect.height)
 
         horizontal = item.GetOrientation() == AUI_TBTOOL_HORIZONTAL
 
         if horizontal:
-            button_rect = wx.Rect(rect.x, rect.y, rect.width-BUTTON_DROPDOWN_WIDTH, rect.height)
-            dropdown_rect = wx.Rect(rect.x+rect.width-BUTTON_DROPDOWN_WIDTH-1, rect.y, BUTTON_DROPDOWN_WIDTH+1, rect.height)
+            button_rect = wx.Rect(rect.x, rect.y, rect.width-self._dropdown_size, rect.height)
+            dropdown_rect = wx.Rect(rect.x+rect.width-self._dropdown_size-1, rect.y, self._dropdown_size+1, rect.height)
         else:
-            button_rect = wx.Rect(rect.x, rect.y, rect.width, rect.height-BUTTON_DROPDOWN_WIDTH)
-            dropdown_rect = wx.Rect(rect.x, rect.y+rect.height-BUTTON_DROPDOWN_WIDTH-1, rect.width, BUTTON_DROPDOWN_WIDTH+1)
+            button_rect = wx.Rect(rect.x, rect.y, rect.width, rect.height-self._dropdown_size)
+            dropdown_rect = wx.Rect(rect.x, rect.y+rect.height-self._dropdown_size-1, rect.width, self._dropdown_size+1)
 
         dropbmp_width = int(self._button_dropdown_bmp.GetLogicalWidth())
         dropbmp_height = int(self._button_dropdown_bmp.GetLogicalHeight())
@@ -1246,9 +1293,9 @@ class AuiDefaultToolBarArt(object):
         # if the tool has a dropdown button, add it to the width
         if item.HasDropDown():
             if item.GetOrientation() == AUI_TBTOOL_HORIZONTAL:
-                width += BUTTON_DROPDOWN_WIDTH+4
+                width += self._dropdown_size + 4
             else:
-                height += BUTTON_DROPDOWN_WIDTH+4
+                height += self._dropdown_size + 4
 
         return wx.Size(width, height)
 
@@ -1391,6 +1438,8 @@ class AuiDefaultToolBarArt(object):
             return self._gripper_size
         elif element_id == AUI_TBART_OVERFLOW_SIZE:
             return self._overflow_size
+        elif element_id == AUI_TBART_DROPDOWN_SIZE:
+            return self._dropdown_size
 
         return 0
 
@@ -1801,6 +1850,9 @@ class AuiToolBar(wx.Control):
             self._art.SetAGWFlags(self._agwStyle)
             self._art.SetTextOrientation(self._tool_text_orientation)
             self._art.SetOrientation(self._tool_orientation)
+
+        if self._popup:
+            self._popup.tb.SetArtProvider(self._art.Clone())
 
 
     def GetArtProvider(self):
@@ -3730,6 +3782,7 @@ class AuiToolBar(wx.Control):
         pt.y = cli_rect.y + cli_rect.height
         if self._popup is None:
             self._popup = AuiToolBarPopup(self.GetParent())
+            self._popup.tb.SetArtProvider(self.GetArtProvider().Clone())
         self._popup.Position = self.ClientToScreen(pt)
         self._popup.UpdateItems(self, items)
         self._popup.Show()
@@ -3832,11 +3885,14 @@ class AuiToolBar(wx.Control):
             rect = wx.Rect(*self._action_item.sizer_item.GetRect())
 
             if self._action_item.dropdown:
+                dropdown_size = 10
+                if self._art:
+                    dropdown_size = self._art.GetElementSize(AUI_TBART_DROPDOWN_SIZE)
                 if (self._action_item.orientation == AUI_TBTOOL_HORIZONTAL and \
-                    mouse_x >= (rect.x+rect.width-BUTTON_DROPDOWN_WIDTH-1) and \
+                    mouse_x >= (rect.x+rect.width-dropdown_size-1) and \
                     mouse_x < (rect.x+rect.width)) or \
                     (self._action_item.orientation != AUI_TBTOOL_HORIZONTAL and \
-                     mouse_y >= (rect.y+rect.height-BUTTON_DROPDOWN_WIDTH-1) and \
+                     mouse_y >= (rect.y+rect.height-dropdown_size-1) and \
                      mouse_y < (rect.y+rect.height)):
 
                     e.SetDropDownClicked(True)

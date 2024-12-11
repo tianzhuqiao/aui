@@ -7180,7 +7180,7 @@ class AuiManager(wx.EvtHandler):
             if paneInfo.IsOk():
                 notebookRoot = GetNotebookRoot(self._panes, paneInfo.notebook_id)
                 if notebookRoot:
-                    notebookRoot.Caption(paneInfo.caption).Tooltip(paneInfo.tooltip)
+                    notebookRoot.Caption(paneInfo.caption).Tooltip(paneInfo.tooltip).Icon(paneInfo.icon)
                     self.RefreshCaptions()
 
         event.Skip()
@@ -7922,7 +7922,7 @@ class AuiManager(wx.EvtHandler):
                 self._frame.Refresh(True, part.rect)
                 self._frame.Update()
 
-    def SetPaneTitle(self, pane, title, tooltip=None):
+    def SetPaneTitle(self, pane, title, tooltip=None, icon=None):
         if pane:
             info = self.GetPane(pane)
             if info is None or not info.IsOk() or info.caption == title:
@@ -7931,6 +7931,8 @@ class AuiManager(wx.EvtHandler):
             info.Caption(title)
             if tooltip is not None:
                 info.Tooltip(tooltip)
+            if icon is not None:
+                info.Icon(icon)
 
             window = info.window
             parent = window.GetParent()
@@ -7942,9 +7944,10 @@ class AuiManager(wx.EvtHandler):
                 idx = parent.GetPageIndex(window)
                 parent.SetPageText(idx, info.caption)
                 parent.SetPageTooltip(idx, info.tooltip)
+                parent.SetPageBitmap(idx, info.icon)
                 if idx == parent.GetSelection():
                     page_info = self.GetPane(parent)
-                    page_info.Caption(info.caption).Tooltip(info.tooltip)
+                    page_info.Caption(info.caption).Tooltip(info.tooltip).Icon(info.icon)
             self.RefreshCaptions()
             parent.Update()
 

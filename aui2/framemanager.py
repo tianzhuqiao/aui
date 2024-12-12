@@ -3548,6 +3548,8 @@ def FindOppositeDocks(docks, dock_direction):
     :param integer `dock_direction`: the :class:`AuiDockInfo` docking direction to analyze;
     """
 
+    arr = []
+
     if dock_direction == AUI_DOCK_LEFT:
         arr = FindDocks(docks, AUI_DOCK_RIGHT, -1, -1)
     elif dock_direction == AUI_DOCK_TOP:
@@ -4059,6 +4061,8 @@ class AuiManager(wx.EvtHandler):
                             AUI_NB_SUB_NOTEBOOK | AUI_NB_TAB_EXTERNAL_MOVE
         self._autoNBStyle -= AUI_NB_DRAW_DND_TAB
 
+        self._restore_bitmap = None
+
         if managed_window:
             self.SetManagedWindow(managed_window)
 
@@ -4103,6 +4107,9 @@ class AuiManager(wx.EvtHandler):
         """
 
         return AuiFloatingFrame(parent, self, pane_info)
+
+    def SetRestoreButtonBitmap(self, bmp):
+        self._restore_bitmap = bmp
 
     def CanDockPanel(self, p):
         """
@@ -7097,7 +7104,8 @@ class AuiManager(wx.EvtHandler):
 
                 self._action_window = paneInfo.window
 
-                self._frame.CaptureMouse()
+                if not self._frame.HasCapture():
+                    self._frame.CaptureMouse()
                 event.SetDispatched(True)
 
             else:
@@ -8339,7 +8347,8 @@ class AuiManager(wx.EvtHandler):
         self._action_offset = offset
         self._toolbar_action_offset = wx.Point(*self._action_offset)
 
-        self._frame.CaptureMouse()
+        if not self._frame.HasCapture():
+            self._frame.CaptureMouse()
 
         if paneInfo.IsDocked():
             self._action = actionClickCaption
@@ -8720,7 +8729,8 @@ class AuiManager(wx.EvtHandler):
 
                 DrawResizeHint(dc, rect)
 
-            self._frame.CaptureMouse()
+            if not self._frame.HasCapture():
+                self._frame.CaptureMouse()
 
         elif part.type == AuiDockUIPart.typePaneButton:
             if self.IsPaneButtonVisible(part):
@@ -8728,7 +8738,8 @@ class AuiManager(wx.EvtHandler):
                 self._action_part = part
                 self._action_pane = None
                 self._action_start = wx.Point(*event.GetPosition())
-                self._frame.CaptureMouse()
+                if not self._frame.HasCapture():
+                    self._frame.CaptureMouse()
 
                 self.RefreshButton(part)
 
@@ -9022,6 +9033,12 @@ class AuiManager(wx.EvtHandler):
         if self._art:
             self._art.Init()
 
+        # re-generate the image for restore button
+        for pane in self._panes:
+            if pane.IsMinimized():
+                self.RestoreMinimizedPane(pane)
+                self.MinimizePane(pane)
+
         if self._frame:
             self.Update()
             self._frame.Refresh()
@@ -9154,7 +9171,9 @@ class AuiManager(wx.EvtHandler):
                 self._frame.ReleaseMouse()
 
             self.DoEndResizeAction(event)
-            self._frame.CaptureMouse()
+
+            if not self._frame.HasCapture():
+                self._frame.CaptureMouse()
             return
 
         if not self._action_part or not self._action_part.dock or not self._action_part.orientation:
@@ -9516,7 +9535,8 @@ class AuiManager(wx.EvtHandler):
 
         # Cancel the action and release the mouse.
         self._action = actionNone
-        self._frame.ReleaseMouse()
+        if self._frame.HasCapture():
+            self._frame.ReleaseMouse()
         self._action_window = None
 
     def OnMotion_DragToolbarPane(self, eventOrPt):
@@ -9623,7 +9643,12 @@ class AuiManager(wx.EvtHandler):
                 self._hover_button = part
                 self.RefreshButton(part)
 
+                if not self._frame.HasCapture():
+                    self._frame.CaptureMouse()
         else:
+
+            if self._frame.HasCapture():
+                self._frame.ReleaseMouse()
 
             if self._hover_button:
                 self.RefreshButton(self._hover_button)
@@ -9875,7 +9900,10 @@ class AuiManager(wx.EvtHandler):
             if paneInfo.icon and paneInfo.icon.IsOk():
                 restore_bitmap = paneInfo.icon
             else:
-                restore_bitmap = svg_to_bitmap(restore_svg, win=self._frame)#self._art._restore_bitmap
+                restore_bitmap = self._restore_bitmap
+                if restore_bitmap is None:
+                    clr = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+                    restore_bitmap = svg_to_bitmap(restore_svg, clr, win=self._frame)
 
             if posMask == AUI_MINIMIZE_POS_TOOLBAR:
                 xsize, ysize = minimize_toolbar.GetToolBitmapSize()

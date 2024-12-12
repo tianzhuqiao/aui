@@ -30,7 +30,7 @@ __date__ = "31 March 2009"
 import wx
 
 from .aui_utilities import BitmapFromBits, StepColour, GetLabelSize
-from .aui_utilities import GetBaseColour, MakeDisabledBitmap
+from .aui_utilities import GetBaseColour, MakeDisabledBitmap, svg_to_bitmap
 
 import six
 
@@ -751,8 +751,6 @@ class AuiDefaultToolBarArt(object):
     def __init__(self):
         """ Default class constructor. """
 
-        self.SetDefaultColours()
-
         self._agwFlags = 0
         self._text_orientation = AUI_TBTOOL_TEXT_BOTTOM
 
@@ -762,6 +760,7 @@ class AuiDefaultToolBarArt(object):
         self._overflow_size = 16
         self._dropdown_size = 10
 
+        self.SetDefaultColours()
 
     def SetDefaultColours(self, base_colour=None):
         """
@@ -785,17 +784,37 @@ class AuiDefaultToolBarArt(object):
 
         self._highlight_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
 
-        button_dropdown_bits = b"\x80\xc1\xe3\xf7"
-        overflow_bits = b"\x80\xff\x80\xc1\xe3\xf7"
 
-        active_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
-        disabled_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-        self.SetDropDownBitmap(BitmapFromBits(button_dropdown_bits, 7, 4, active_colour),
-                               BitmapFromBits(button_dropdown_bits, 7, 4, disabled_colour))
-        self.SetOverflowBitmap(BitmapFromBits(overflow_bits, 7, 6, active_colour ),
-                               BitmapFromBits(overflow_bits, 7, 6, disabled_colour))
+        self._button_dropdown_bmp = None
+        self._disabled_button_dropdown_bmp = None
+        self._overflow_bmp = None
+        self._disabled_overflow_bmp = None
+        self._reloadButtonBitmap()
 
         self._font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+
+
+    def _reloadButtonBitmap(self, win=None, forced=False):
+
+        if win is None:
+            scale_factor = 1
+        else:
+            scale_factor = win.GetContentScaleFactor()
+
+        clr_active = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        clr_inactive = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+
+        if forced or self._button_dropdown_bmp is None or \
+            scale_factor != self._button_dropdown_bmp.GetScaleFactor():
+
+            self.SetDropDownBitmap(svg_to_bitmap(down_svg, clr_active, win=win),
+                                   svg_to_bitmap(down_svg, clr_inactive, win=win))
+
+        if forced or self._overflow_bmp is None or \
+            scale_factor != self._overflow_bmp.GetScaleFactor():
+
+            self.SetOverflowBitmap(svg_to_bitmap(double_right_svg, clr_active, win=win),
+                                   svg_to_bitmap(double_right_svg, clr_active, win=win))
 
     def SetDropDownBitmap(self, bitmap, disabled_bitmap):
         """
@@ -1123,6 +1142,8 @@ class AuiDefaultToolBarArt(object):
 
         horizontal = item.GetOrientation() == AUI_TBTOOL_HORIZONTAL
 
+        self._reloadButtonBitmap(win=wnd)
+
         if horizontal:
             button_rect = wx.Rect(rect.x, rect.y, rect.width-self._dropdown_size, rect.height)
             dropdown_rect = wx.Rect(rect.x+rect.width-self._dropdown_size-1, rect.y, self._dropdown_size+1, rect.height)
@@ -1181,8 +1202,9 @@ class AuiDefaultToolBarArt(object):
         if horizontal:
             dc.DrawBitmap(dropbmp, dropbmp_x, dropbmp_y, True)
         else:
-            dc.DrawBitmap(wx.Bitmap(dropbmp.ConvertToImage().Rotate90(item.GetOrientation() == AUI_TBTOOL_VERT_CLOCKWISE)),
-                          dropbmp_x, dropbmp_y, True)
+            bmp = wx.Bitmap(dropbmp.ConvertToImage().Rotate90(item.GetOrientation() == AUI_TBTOOL_VERT_CLOCKWISE))
+            bmp.SetScaleFactor(dropbmp.GetScaleFactor())
+            dc.DrawBitmap(bmp, dropbmp_x, dropbmp_y, True)
 
         # set the item's text colour based on if it is disabled
         dc.SetTextForeground(wx.BLACK)
@@ -1293,9 +1315,9 @@ class AuiDefaultToolBarArt(object):
         # if the tool has a dropdown button, add it to the width
         if item.HasDropDown():
             if item.GetOrientation() == AUI_TBTOOL_HORIZONTAL:
-                width += self._dropdown_size + 4
+                width += self._dropdown_size + 8
             else:
-                height += self._dropdown_size + 4
+                height += self._dropdown_size + 8
 
         return wx.Size(width, height)
 
@@ -1391,6 +1413,7 @@ class AuiDefaultToolBarArt(object):
         :param integer `state`: the overflow button state.
         """
 
+        self._reloadButtonBitmap(win=wnd)
         if state & AUI_BUTTON_STATE_HOVER or  state & AUI_BUTTON_STATE_PRESSED:
 
             cli_rect = wnd.GetClientRect()
@@ -1675,6 +1698,8 @@ class AuiToolBar(wx.Control):
         self._action_item = None
         self._tip_item = None
         self._art = AuiDefaultToolBarArt()
+
+
         self._tool_packing = 2
         self._tool_border_padding = 3
         self._tool_text_orientation = AUI_TBTOOL_TEXT_BOTTOM

@@ -29,7 +29,8 @@ __date__ = "31 March 2009"
 import wx
 
 from .aui_utilities import BitmapFromBits, StepColour, ChopText, GetBaseColour
-from .aui_utilities import DrawGradientRectangle, DrawMACCloseButton
+from .aui_utilities import DrawGradientRectangle, DrawCloseButton, \
+                           DrawMinButton, DrawMaxButton, DrawRestoreButton, DrawPinButton
 from .aui_utilities import DarkenBitmap, LightContrastColour
 from .aui_constants import *
 
@@ -158,9 +159,6 @@ class AuiDefaultDockArt(object):
 
         self._caption_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
 
-        self.SetDefaultPaneBitmaps(isMac)
-        self._restore_bitmap = wx.Bitmap(restore_xpm)
-
         # default metric values
         self._sash_size = 4
 
@@ -186,7 +184,7 @@ class AuiDefaultDockArt(object):
         self._caption_size = 19
         self.UpdateCaptionHeight()
         self._border_size = 1
-        self._button_size = 14
+        self._button_size = 16
         self._gripper_size = 9
         self._gradient_type = AUI_GRADIENT_VERTICAL
         self._draw_sash = False
@@ -202,8 +200,7 @@ class AuiDefaultDockArt(object):
 
         self.SetDefaultColours()
 
-        isMac = wx.Platform == "__WXMAC__"
-        self.SetDefaultPaneBitmaps(isMac)
+        self.SetDefaultPaneBitmaps()
 
 
     def SetDefaultColours(self, base_colour=None):
@@ -361,11 +358,10 @@ class AuiDefaultDockArt(object):
             self._sash_brush.SetColour(colour)
         elif id == AUI_DOCKART_INACTIVE_CAPTION_COLOUR:
             self._inactive_caption_colour = colour
-            if not self._custom_pane_bitmaps and wx.Platform == "__WXMAC__":
+            if not self._custom_pane_bitmaps:
                 # No custom bitmaps for the pane close button
                 # Change the MAC close bitmap colour
-                face = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-                self._inactive_close_bitmap = DrawMACCloseButton(face, colour)
+                self._reloadButtonBitmap(forced=True)
 
         elif id == AUI_DOCKART_INACTIVE_CAPTION_GRADIENT_COLOUR:
             self._inactive_caption_gradient_colour = colour
@@ -373,11 +369,10 @@ class AuiDefaultDockArt(object):
             self._inactive_caption_text_colour = colour
         elif id == AUI_DOCKART_ACTIVE_CAPTION_COLOUR:
             self._active_caption_colour = colour
-            if not self._custom_pane_bitmaps and wx.Platform == "__WXMAC__":
+            if not self._custom_pane_bitmaps:
                 # No custom bitmaps for the pane close button
                 # Change the MAC close bitmap colour
-                face = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-                self._active_close_bitmap = DrawMACCloseButton(face, colour)
+                self._reloadButtonBitmap(forced=True)
 
         elif id == AUI_DOCKART_ACTIVE_CAPTION_GRADIENT_COLOUR:
             self._active_caption_gradient_colour = colour
@@ -722,33 +717,35 @@ class AuiDefaultDockArt(object):
         if not pane:
             return
 
+        self._reloadButtonBitmap(dc.GetContentScaleFactor())
+        active = button_state in [AUI_BUTTON_STATE_HOVER, AUI_BUTTON_STATE_PRESSED]
+        # active = pane.state & optionActive
         if button == AUI_BUTTON_CLOSE:
-            self._reloadCloseBmp(dc.GetContentScaleFactor())
-            if pane.state & optionActive:
+            if active:
                 bmp = self._active_close_bitmap
             else:
                 bmp = self._inactive_close_bitmap
 
         elif button == AUI_BUTTON_PIN:
-            if pane.state & optionActive:
+            if active:
                 bmp = self._active_pin_bitmap
             else:
                 bmp = self._inactive_pin_bitmap
 
         elif button == AUI_BUTTON_MAXIMIZE_RESTORE:
             if pane.IsMaximized():
-                if pane.state & optionActive:
+                if active:
                     bmp = self._active_restore_bitmap
                 else:
                     bmp = self._inactive_restore_bitmap
             else:
-                if pane.state & optionActive:
+                if active:
                     bmp = self._active_maximize_bitmap
                 else:
                     bmp = self._inactive_maximize_bitmap
 
         elif button == AUI_BUTTON_MINIMIZE:
-            if pane.state & optionActive:
+            if active:
                 bmp = self._active_minimize_bitmap
             else:
                 bmp = self._inactive_minimize_bitmap
@@ -842,54 +839,65 @@ class AuiDefaultDockArt(object):
                     break
 
 
-    def _reloadCloseBmp(self, scale_factor=1):
-        if wx.Platform == "__WXMAC__":
-            if not hasattr(self, '_active_close_bitmap') or \
-               scale_factor != self._active_close_bitmap.GetScaleFactor():
-                face = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-                self._inactive_close_bitmap = DrawMACCloseButton(face, self._inactive_caption_colour, scale_factor=scale_factor)
-                self._active_close_bitmap = DrawMACCloseButton(face, self._active_caption_colour, scale_factor=scale_factor)
+    def _reloadButtonBitmap(self, scale_factor=1, forced=False):
 
+        face = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        clr_active = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        clr_inactive = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
 
-    def SetDefaultPaneBitmaps(self, isMac):
+        if forced or self._active_close_bitmap is None or \
+            scale_factor != self._active_close_bitmap.GetScaleFactor():
+
+            self._inactive_close_bitmap = DrawCloseButton(clr_inactive, scale_factor=scale_factor)
+            self._active_close_bitmap = DrawCloseButton(clr_active, scale_factor=scale_factor)
+
+        if forced or self._active_minimize_bitmap is None or \
+            scale_factor != self._active_minimize_bitmap.GetScaleFactor():
+
+            self._active_minimize_bitmap = DrawMinButton(clr_active, scale_factor=scale_factor)
+            self._inactive_minimize_bitmap = DrawMinButton(clr_inactive, scale_factor=scale_factor)
+
+        if forced or self._active_maximize_bitmap is None or \
+            scale_factor != self._active_maximize_bitmap.GetScaleFactor():
+
+            self._active_maximize_bitmap = DrawMaxButton(clr_active, scale_factor=scale_factor)
+            self._inactive_maximize_bitmap = DrawMaxButton(clr_inactive, scale_factor=scale_factor)
+
+        if forced or self._active_restore_bitmap is None or \
+            scale_factor != self._active_restore_bitmap.GetScaleFactor():
+
+            self._active_restore_bitmap = DrawRestoreButton(clr_active, scale_factor=scale_factor)
+            self._inactive_restore_bitmap = DrawRestoreButton(clr_inactive, scale_factor=scale_factor)
+
+        if forced or self._active_pin_bitmap is None or \
+            scale_factor != self._active_pin_bitmap.GetScaleFactor():
+
+            self._active_pin_bitmap = DrawPinButton(clr_active, scale_factor=scale_factor)
+            self._inactive_pin_bitmap = DrawPinButton(clr_inactive, scale_factor=scale_factor)
+
+    def SetDefaultPaneBitmaps(self):
         """
         Assigns the default pane bitmaps.
 
         :param bool `isMac`: whether we are on wxMAC or not.
         """
-        face = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-        if isMac:
-            self._inactive_close_bitmap = DrawMACCloseButton(face, self._inactive_caption_colour)
-            self._active_close_bitmap = DrawMACCloseButton(face, self._active_caption_colour)
-        else:
-            self._inactive_close_bitmap = BitmapFromBits(close_bits, 16, 16, self._inactive_caption_text_colour)
-            self._active_close_bitmap = BitmapFromBits(close_bits, 16, 16, self._active_caption_text_colour)
+        self._inactive_close_bitmap = None
+        self._active_close_bitmap = None
 
-        if isMac:
-            self._inactive_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, face)
-            self._active_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, face)
-        else:
-            self._inactive_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, self._inactive_caption_text_colour)
-            self._active_maximize_bitmap = BitmapFromBits(max_bits, 16, 16, self._active_caption_text_colour)
+        self._inactive_maximize_bitmap = None
+        self._active_maximize_bitmap = None
 
-        if isMac:
-            self._inactive_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, face)
-            self._active_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, face)
-        else:
-            self._inactive_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, self._inactive_caption_text_colour)
-            self._active_restore_bitmap = BitmapFromBits(restore_bits, 16, 16, self._active_caption_text_colour)
+        self._inactive_restore_bitmap = None
+        self._active_restore_bitmap = None
 
-        if isMac:
-            self._inactive_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, face)
-            self._active_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, face)
-        else:
-            self._inactive_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, self._inactive_caption_text_colour)
-            self._active_minimize_bitmap = BitmapFromBits(minimize_bits, 16, 16, self._active_caption_text_colour)
+        self._inactive_minimize_bitmap = None
+        self._active_minimize_bitmap = None
 
-        self._inactive_pin_bitmap = BitmapFromBits(pin_bits, 16, 16, self._inactive_caption_text_colour)
-        self._active_pin_bitmap = BitmapFromBits(pin_bits, 16, 16, self._active_caption_text_colour)
+        self._inactive_pin_bitmap = None
+        self._active_pin_bitmap = None
 
         self._custom_pane_bitmaps = False
+        self._reloadButtonBitmap()
 
 
     def SetCustomPaneBitmap(self, bmp, button, active, maximize=False):

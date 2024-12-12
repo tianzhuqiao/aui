@@ -31,8 +31,8 @@ __date__ = "31 March 2009"
 import wx
 
 from .aui_utilities import BitmapFromBits, StepColour, IndentPressedBitmap, ChopText
-from .aui_utilities import GetBaseColour, DrawMACCloseButton, LightColour, TakeScreenShot
-from .aui_utilities import CopyAttributes
+from .aui_utilities import GetBaseColour, DrawCloseButton, LightColour, TakeScreenShot
+from .aui_utilities import CopyAttributes, svg_to_bitmap
 
 from .aui_constants import *
 
@@ -141,18 +141,45 @@ class AuiDefaultTabArt(object):
         self._base_colour_brush = wx.Brush(self._base_colour)
 
 
-    def _reloadCloseBmp(self, scale_factor=1):
-        if wx.Platform == "__WXMAC__":
-            if not hasattr(self, '_active_close_bmp') or \
-               scale_factor != self._active_close_bmp.GetScaleFactor():
-                active_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
-                disabled_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-                bk = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
-                self._active_close_bmp = DrawMACCloseButton(active_colour, bk, scale_factor=scale_factor)
-                self._disabled_close_bmp = DrawMACCloseButton(disabled_colour, bk, scale_factor=scale_factor)
+    def _reloadButtonBitmap(self, win=None, forced=False):
 
-                self._hover_close_bmp = self._active_close_bmp
-                self._pressed_close_bmp = self._active_close_bmp
+        if win is None:
+            scale_factor = 1
+        else:
+            scale_factor = win.GetContentScaleFactor()
+
+        clr_active = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        clr_inactive = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+
+        if forced or self._active_close_bmp is None or \
+            scale_factor != self._active_close_bmp.GetScaleFactor():
+
+            active_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+            disabled_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+            bk = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
+            self._active_close_bmp = DrawCloseButton(clr_active, scale_factor=scale_factor)
+            self._disabled_close_bmp = DrawCloseButton(clr_inactive, scale_factor=scale_factor)
+
+            self._hover_close_bmp = self._active_close_bmp
+            self._pressed_close_bmp = self._active_close_bmp
+
+        if forced or self._active_left_bmp is None or \
+            scale_factor != self._active_left_bmp.GetScaleFactor():
+
+            self._active_left_bmp = svg_to_bitmap(backward_svg, clr_active, win=win)
+            self._disabled_left_bmp = svg_to_bitmap(backward_svg, clr_inactive, win=win)
+
+        if forced or self._active_right_bmp is None or \
+            scale_factor != self._active_right_bmp.GetScaleFactor():
+
+            self._active_right_bmp = svg_to_bitmap(forward_svg, clr_active, win=win)
+            self._disabled_right_bmp = svg_to_bitmap(forward_svg, clr_inactive, win=win)
+
+
+        if forced or self._active_windowlist_bmp is None or \
+            scale_factor != self._active_windowlist_bmp.GetScaleFactor():
+            self._active_windowlist_bmp = svg_to_bitmap(down_svg, clr_active, win=win)
+            self._disabled_windowlist_bmp = svg_to_bitmap(down_svg, clr_inactive, win=win)
 
     def SetDefaultColours(self, base_colour=None):
         """
@@ -186,29 +213,26 @@ class AuiDefaultTabArt(object):
         disabled_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         bk = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
 
-        if wx.Platform == "__WXMAC__":
-            self._active_close_bmp = DrawMACCloseButton(active_colour, bk)
-            self._disabled_close_bmp = DrawMACCloseButton(disabled_colour, bk)
-        else:
-            self._active_close_bmp = BitmapFromBits(nb_close_bits, 16, 16, active_colour)
-            self._disabled_close_bmp = BitmapFromBits(nb_close_bits, 16, 16, disabled_colour)
+        self._active_close_bmp = None
+        self._disabled_close_bmp = None
 
-        self._hover_close_bmp = self._active_close_bmp
-        self._pressed_close_bmp = self._active_close_bmp
+        self._hover_close_bmp = None
+        self._pressed_close_bmp = None
 
-        self._active_left_bmp = BitmapFromBits(nb_left_bits, 16, 16, active_colour)
-        self._disabled_left_bmp = BitmapFromBits(nb_left_bits, 16, 16, disabled_colour)
+        self._active_left_bmp = None
+        self._disabled_left_bmp = None
 
-        self._active_right_bmp = BitmapFromBits(nb_right_bits, 16, 16, active_colour)
-        self._disabled_right_bmp = BitmapFromBits(nb_right_bits, 16, 16, disabled_colour)
+        self._active_right_bmp = None
+        self._disabled_right_bmp = None
 
-        self._active_windowlist_bmp = BitmapFromBits(nb_list_bits, 16, 16, active_colour)
-        self._disabled_windowlist_bmp = BitmapFromBits(nb_list_bits, 16, 16, disabled_colour)
+        self._active_windowlist_bmp = None
+        self._disabled_windowlist_bmp = None
 
         self._focusPen = wx.Pen(active_colour, 1, wx.PENSTYLE_USER_DASH)
         self._focusPen.SetDashes([1, 1])
         self._focusPen.SetCap(wx.CAP_BUTT)
-        self._reloadCloseBmp()
+
+        self._reloadButtonBitmap()
 
 
     def Clone(self):
@@ -590,11 +614,10 @@ class AuiDefaultTabArt(object):
 
         out_button_rect = wx.Rect()
 
+        self._reloadButtonBitmap(win=wnd)
         # draw close button if necessary
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
 
-            scale_factor = dc.GetContentScaleFactor()
-            self._reloadCloseBmp(scale_factor)
             bmp = self._disabled_close_bmp
 
             if close_button_state == AUI_BUTTON_STATE_HOVER:
@@ -731,9 +754,8 @@ class AuiDefaultTabArt(object):
 
         bitmap_id, button_state = button.id, button.cur_state
 
+        self._reloadButtonBitmap(win=wnd)
         if bitmap_id == AUI_BUTTON_CLOSE:
-            scale_factor = dc.GetContentScaleFactor()
-            self._reloadCloseBmp(scale_factor)
             if button_state & AUI_BUTTON_STATE_DISABLED:
                 bmp = self._disabled_close_bmp
             elif button_state & AUI_BUTTON_STATE_HOVER:
@@ -2050,7 +2072,7 @@ class FF2TabArt(AuiDefaultTabArt):
         # draw 'x' on tab (if enabled)
         if close_button_state != AUI_BUTTON_STATE_HIDDEN:
 
-            close_button_width = self._active_close_bmp.GetLogicalWidth()
+            close_button_width = int(self._active_close_bmp.GetLogicalWidth())
             bmp = self._disabled_close_bmp
 
             if close_button_state == AUI_BUTTON_STATE_HOVER:

@@ -318,6 +318,197 @@ def DrawMACCloseButton(colour, backColour=None, scale_factor=1):
     dc.SelectObject(wx.NullBitmap)
     return bmp
 
+def DrawCloseButton(colour, scale_factor=1):
+    """
+    Draws the tab close button using :class:`GraphicsContext`.
+
+    :param wx.Colour `colour`: the colour to use to draw the button;
+    :param `scale_factor`: the scale factor for the bitmap
+    """
+    size = 16
+    if wx.Platform == '__WXMSW__':
+        scale_factor = 1
+
+    bmp = wx.Bitmap.FromRGBA(int(size*scale_factor), int(size*scale_factor))
+    bmp.SetScaleFactor(scale_factor)
+    dc = wx.MemoryDC()
+    dc.SelectObject(bmp)
+
+    gc = wx.GraphicsContext.Create(dc)
+
+    path = gc.CreatePath()
+    if colour is not None:
+        pen = wx.Pen(colour, 1)
+    else:
+        pen = wx.Pen("white", 1)
+
+    pen.SetCap(wx.CAP_BUTT)
+    pen.SetJoin(wx.JOIN_BEVEL)
+    gc.SetPen(pen)
+    path.MoveToPoint(4, 4)
+    path.AddLineToPoint(10, 10)
+    path.MoveToPoint(4, 10)
+    path.AddLineToPoint(10, 4)
+    path.CloseSubpath()
+    gc.DrawPath(path)
+
+    dc.SelectObject(wx.NullBitmap)
+    return bmp
+
+def DrawMinButton(colour, scale_factor=1):
+    """
+    Draws the minimize button using :class:`GraphicsContext`.
+
+    :param wx.Colour `colour`: the colour to use to draw the button;
+    :param `scale_factor`: the scale factor for the bitmap
+    """
+
+    size = 16
+    if wx.Platform == '__WXMSW__':
+        scale_factor = 1
+
+    bmp = wx.Bitmap.FromRGBA(int(size*scale_factor), int(size*scale_factor))
+    bmp.SetScaleFactor(scale_factor)
+    dc = wx.MemoryDC()
+    dc.SelectObject(bmp)
+
+    gc = wx.GraphicsContext.Create(dc)
+
+    path = gc.CreatePath()
+    if colour is not None:
+        pen = wx.Pen(colour, 1)
+    else:
+        pen = wx.Pen("white", 1)
+
+    pen.SetCap(wx.CAP_BUTT)
+    pen.SetJoin(wx.JOIN_BEVEL)
+    gc.SetPen(pen)
+    path.AddRectangle(3, 4, 8, 2)
+    path.CloseSubpath()
+    gc.DrawPath(path)
+
+    dc.SelectObject(wx.NullBitmap)
+    return bmp
+
+def DrawMaxButton(colour, scale_factor=1):
+    """
+    Draws the maximize button using :class:`GraphicsContext`.
+
+    :param wx.Colour `colour`: the colour to use to draw the button;
+    :param `scale_factor`: the scale factor for the bitmap
+    """
+
+    size = 16
+    if wx.Platform == '__WXMSW__':
+        scale_factor = 1
+
+    bmp = wx.Bitmap.FromRGBA(int(size*scale_factor), int(size*scale_factor))
+    bmp.SetScaleFactor(scale_factor)
+    dc = wx.MemoryDC()
+    dc.SelectObject(bmp)
+
+    gc = wx.GraphicsContext.Create(dc)
+
+    path = gc.CreatePath()
+    if colour is not None:
+        pen = wx.Pen(colour, 1)
+    else:
+        pen = wx.Pen("white", 1)
+
+    pen.SetCap(wx.CAP_BUTT)
+    pen.SetJoin(wx.JOIN_BEVEL)
+    gc.SetPen(pen)
+    path.AddRectangle(3, 4, 8, 2)
+    path.AddRectangle(3, 4, 8, 8)
+    path.CloseSubpath()
+    gc.DrawPath(path)
+
+    dc.SelectObject(wx.NullBitmap)
+    return bmp
+
+def DrawRestoreButton(colour, scale_factor=1):
+    """
+    Draws the restore button using :class:`GraphicsContext`.
+
+    :param wx.Colour `colour`: the colour to use to draw the button;
+    :param `scale_factor`: the scale factor for the bitmap
+    """
+
+    size = 16
+    if wx.Platform == '__WXMSW__':
+        scale_factor = 1
+
+    bmp = wx.Bitmap.FromRGBA(int(size*scale_factor), int(size*scale_factor))
+    bmp.SetScaleFactor(scale_factor)
+    dc = wx.MemoryDC()
+    dc.SelectObject(bmp)
+
+    gc = wx.GraphicsContext.Create(dc)
+
+    path = gc.CreatePath()
+    if colour is not None:
+        pen = wx.Pen(colour, 1)
+    else:
+        pen = wx.Pen("white", 1)
+
+    pen.SetCap(wx.CAP_BUTT)
+    pen.SetJoin(wx.JOIN_BEVEL)
+    gc.SetPen(pen)
+    path.AddRectangle(5, 2, 8, 2)
+    path.MoveToPoint(5, 2)
+    path.AddLineToPoint(5, 6)
+    path.MoveToPoint(13, 2)
+    path.AddLineToPoint(13, 8)
+    path.AddLineToPoint(9, 8)
+
+    path.AddRectangle(1, 6, 8, 2)
+    path.AddRectangle(1, 6, 8, 6)
+    path.CloseSubpath()
+    gc.DrawPath(path)
+
+    dc.SelectObject(wx.NullBitmap)
+    return bmp
+
+def DrawPinButton(colour, scale_factor=1):
+    """
+    Draws the restore button using :class:`GraphicsContext`.
+
+    :param wx.Colour `colour`: the colour to use to draw the button;
+    :param `scale_factor`: the scale factor for the bitmap
+    """
+
+    size = 16
+    if wx.Platform == '__WXMSW__':
+        scale_factor = 1
+
+    bmp = wx.Bitmap.FromRGBA(int(size*scale_factor), int(size*scale_factor))
+    bmp.SetScaleFactor(scale_factor)
+    dc = wx.MemoryDC()
+    dc.SelectObject(bmp)
+
+    gc = wx.GraphicsContext.Create(dc)
+
+    path = gc.CreatePath()
+    if colour is not None:
+        pen = wx.Pen(colour, 1)
+    else:
+        pen = wx.Pen("white", 1)
+
+    pen.SetCap(wx.CAP_BUTT)
+    pen.SetJoin(wx.JOIN_BEVEL)
+    gc.SetPen(pen)
+    path.AddRectangle(5, 3, 5, 7)
+    path.MoveToPoint(9, 3)
+    path.AddLineToPoint(9, 10)
+    path.MoveToPoint(3, 10)
+    path.AddLineToPoint(12, 10)
+    path.MoveToPoint(7, 10)
+    path.AddLineToPoint(7, 13)
+    path.CloseSubpath()
+    gc.DrawPath(path)
+
+    dc.SelectObject(wx.NullBitmap)
+    return bmp
 
 def DarkenBitmap(bmp, caption_colour, new_colour):
     """
@@ -668,14 +859,24 @@ def CopyAttributes(newArt, oldArt):
     return newArt
 
 
-def svg_to_bitmap(svg, size=None, win=None):
+def svg_to_bitmap(svg, clr, size=None, win=None, scale=None):
     if size is None:
         if wx.Platform == '__WXMSW__':
             size = (24, 24)
         else:
             size = (16, 16)
+
+    svg = svg.replace('{clr}', clr.GetAsString(wx.C2S_HTML_SYNTAX)[:7])
+    svg = svg.replace('{alpha}', f'{clr.GetAlpha()/255.0}')
+
     bmp = wx.svg.SVGimage.CreateFromBytes(str.encode(svg))
-    bmp = bmp.ConvertToScaledBitmap(size, win)
-    if win:
-        bmp.SetScaleFactor(win.GetContentScaleFactor())
+    if win is not None:
+        bmp = bmp.ConvertToScaledBitmap(size, win)
+        scale = win.GetContentScaleFactor()
+    else:
+        if scale is None:
+            scale = 1
+        bmp = bmp.ConvertToScaledBitmap((int(size[0]*scale), int(size[1]*scale)))
+
+    bmp.SetScaleFactor(scale)
     return bmp

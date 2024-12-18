@@ -845,6 +845,9 @@ class AuiDefaultDockArt(object):
         clr_active = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
         clr_inactive = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
 
+        if wx.Platform == '__WXMSW__':
+            scale_factor = 1
+
         if forced or self._active_close_bitmap is None or \
             scale_factor != self._active_close_bitmap.GetScaleFactor():
 

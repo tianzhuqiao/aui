@@ -1623,17 +1623,17 @@ class AuiToolBarPopup(wx.Frame):
                 tool = self.tb.AddControl(item.window, item.GetLabel())
             elif item.GetKind() == ITEM_CHECK:
                 tool = self.tb.AddCheckTool(item.GetId(), item.GetLabel(),
-                                            item.GetBitmap(), item.GetDisabledBitmap())
+                                            item.bitmap, item.disabled_bitmap)
                 if item.state & AUI_BUTTON_STATE_CHECKED:
                     tool.state |= AUI_BUTTON_STATE_CHECKED
             elif item.GetKind() == ITEM_RADIO:
                 tool = self.tb.AddRadioTool(item.GetId(), item.GetLabel(),
-                                            item.GetBitmap(), item.GetDisabledBitmap())
+                                            item.bitmap, item.disabled_bitmap)
                 if item.state & AUI_BUTTON_STATE_CHECKED:
                     tool.state |= AUI_BUTTON_STATE_CHECKED
             elif item.GetKind() == ITEM_NORMAL:
                 tool = self.tb.AddTool(item.GetId(), item.GetLabel(),
-                                       item.GetBitmap(), item.GetDisabledBitmap(), ITEM_NORMAL, target=item.target)
+                                       item.bitmap, item.disabled_bitmap, ITEM_NORMAL, target=item.target)
                 self.tb.SetToolDropDown(tool.GetId(), wnd.GetToolDropDown(tool.GetId()))
             if tool:
                 tool.SetAlignment(wx.EXPAND)

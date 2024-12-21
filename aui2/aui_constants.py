@@ -528,9 +528,9 @@ forward_gray_svg = '<svg xmlns="http://www.w3.org/2000/svg" enable-background="n
 backward_svg = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="{clr}" fill-opacity="{alpha}"><path d="M0 0h24v24H0V0z" fill="none" opacity=".87"/><path d="M17.51 3.87L15.73 2.1 5.84 12l9.9 9.9 1.77-1.77L9.38 12l8.13-8.13z"/></svg>'
 backward_gray_svg = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="{clr}" fill-opacity="{alpha}"><path d="M0 0h24v24H0V0z" fill="none" opacity=".87"/><path d="M17.51 3.87L15.73 2.1 5.84 12l9.9 9.9 1.77-1.77L9.38 12l8.13-8.13z"/></svg>'
 
-down_svg = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="{clr}" fill-opacity="{alpha}"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg>'
+down_svg = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="{clr}" fill-opacity="{alpha}"><path d="M480-320l-240 -240 l56 -56 l184 184 l184 -184 l56 56Z"/></svg>'
 
-down_grey_svg = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="{clr}" fill-opacity="{alpha}"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg>'
+window_list_svg = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="{clr}" fill-opacity="{alpha}"><path d="M0 0h24v24H0V0z" fill="none" opacity=".87"/><path d="M3.87 6.49L2.1 8.27 12 18.16l9.9 -9.9 -1.77 -1.77L12 14.62 l-8.13 -8.13z"/></svg>'
 
 double_right_svg ='<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="{clr}" fill-opacity="{alpha}"><path d="M383-480 200-664l56-56 240 240-240 240-56-56 183-184Zm264 0L464-664l56-56 240 240-240 240-56-56 183-184Z"/></svg>'
 

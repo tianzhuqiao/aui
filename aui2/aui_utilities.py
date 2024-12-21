@@ -346,9 +346,9 @@ def DrawCloseButton(colour, scale_factor=1):
     pen.SetJoin(wx.JOIN_BEVEL)
     gc.SetPen(pen)
     path.MoveToPoint(4, 4)
-    path.AddLineToPoint(10, 10)
-    path.MoveToPoint(4, 10)
-    path.AddLineToPoint(10, 4)
+    path.AddLineToPoint(11, 11)
+    path.MoveToPoint(4, 11)
+    path.AddLineToPoint(11, 4)
     path.CloseSubpath()
     gc.DrawPath(path)
 
@@ -607,7 +607,7 @@ class TabDragImage(wx.DragImage):
     This class handles the creation of a custom image in case of drag and drop of a notebook tab.
     """
 
-    def __init__(self, notebook, page, button_state, tabArt):
+    def __init__(self, notebook, page, button, tabArt):
         """
         Default class constructor.
 
@@ -615,35 +615,36 @@ class TabDragImage(wx.DragImage):
 
         :param `notebook`: an instance of :class:`~wx.lib.agw.aui.auibook.AuiNotebook`;
         :param `page`: the dragged :class:`~wx.lib.agw.aui.auibook.AuiNotebookPage` page;
-        :param integer `button_state`: the state of the close button on the tab;
+        :param integer `button`: the close button on the tab;
         :param `tabArt`: an instance of :class:`~wx.lib.agw.aui.tabart.AuiDefaultTabArt` or one of its derivations.
         """
 
         self._backgroundColour = wx.Colour("pink")
-        self._bitmap = self.CreateBitmap(notebook, page, button_state, tabArt)
+        self._bitmap = self.CreateBitmap(notebook, page, button, tabArt)
         wx.DragImage.__init__(self, self._bitmap)
 
 
-    def CreateBitmap(self, notebook, page, button_state, tabArt):
+    def CreateBitmap(self, notebook, page, button, tabArt):
         """
         Actually creates the drag and drop bitmap.
 
         :param `notebook`: an instance of :class:`~wx.lib.agw.aui.auibook.AuiNotebook`;
         :param `page`: the dragged :class:`~wx.lib.agw.aui.auibook.AuiNotebookPage` page;
-        :param integer `button_state`: the state of the close button on the tab;
+        :param integer `button`: the close button on the tab;
         :param `tabArt`: an instance of :class:`~wx.lib.agw.aui.tabart.AuiDefaultTabArt` or one of its derivations.
         """
 
         control = page.control
-        memory = wx.MemoryDC(wx.Bitmap(1, 1))
+        scale_factor = notebook.GetDPIScaleFactor()
+        bitmap = wx.Bitmap(1, 1)
+        bitmap.SetScaleFactor(scale_factor)
+        memory = wx.MemoryDC(bitmap)
 
         tab_size, x_extent = tabArt.GetTabSize(memory, notebook, page.caption, page.bitmap, page.active,
-                                               button_state, control)
-
+                                               button.cur_state, control)
         tab_width, tab_height = tab_size
         rect = wx.Rect(0, 0, tab_width, tab_height)
 
-        scale_factor = notebook.GetDPIScaleFactor()
         bitmap = wx.Bitmap(int(tab_width*scale_factor)+1, int(tab_height*scale_factor)+1)
         bitmap.SetScaleFactor(scale_factor)
         memory.SelectObject(bitmap)
@@ -654,7 +655,7 @@ class TabDragImage(wx.DragImage):
         memory.Clear()
 
         paint_control = wx.Platform != "__WXMAC__"
-        tabArt.DrawTab(memory, notebook, page, rect, button_state, paint_control=paint_control)
+        tabArt.DrawTab(memory, notebook, page, rect, button, paint_control=paint_control)
 
         memory.SetBrush(wx.TRANSPARENT_BRUSH)
         memory.SetPen(wx.BLACK_PEN)

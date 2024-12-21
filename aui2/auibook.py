@@ -1645,7 +1645,7 @@ class AuiTabContainer(object):
             clip_rect.x = offset
 
             dc.SetClippingRegion(clip_rect)
-            self._art.DrawTab(dc, wnd, page, rect, tab_button.cur_state)
+            self._art.DrawTab(dc, wnd, page, rect, tab_button)
             dc.DestroyClippingRegion()
 
         # draw the tabs
@@ -1685,7 +1685,7 @@ class AuiTabContainer(object):
             if rect.width <= 0:
                 break
 
-            page.rect, tab_button.rect, x_extent = self._art.DrawTab(dc, wnd, page, rect, tab_button.cur_state)
+            page.rect, tab_button.rect, x_extent = self._art.DrawTab(dc, wnd, page, rect, tab_button)
 
             if page.active:
                 active = i
@@ -1710,7 +1710,7 @@ class AuiTabContainer(object):
             tab_button = self._tab_close_buttons[active]
 
             rect.x = active_offset
-            dummy = self._art.DrawTab(dc, wnd, page, active_rect, tab_button.cur_state)
+            dummy = self._art.DrawTab(dc, wnd, page, active_rect, tab_button)
 
         raw_dc.Blit(self._rect.x, self._rect.y, self._rect.GetWidth(), self._rect.GetHeight(), dc, 0, 0)
 
@@ -1875,7 +1875,7 @@ class AuiTabContainer(object):
         return None
 
 
-    def ButtonHitTest(self, x, y, state_flags=AUI_BUTTON_STATE_HIDDEN|AUI_BUTTON_STATE_DISABLED):
+    def ButtonHitTest(self, x, y, state_flags=AUI_BUTTON_STATE_HIDDEN):
         """
         Tests if a button was hit.
 
@@ -2361,12 +2361,6 @@ class AuiTabCtrl(wx.Control, AuiTabContainer):
         button = self.ButtonHitTest(pos.x, pos.y)
         wnd = self.TabHitTest(pos.x, pos.y)
 
-        if wnd is not None:
-            mouse_tab = self.GetIdxFromWindow(wnd)
-            if not self._pages[mouse_tab].enabled:
-                self._hover_button = None
-                return
-
         if self._on_button:
             return
 
@@ -2428,7 +2422,7 @@ class AuiTabCtrl(wx.Control, AuiTabContainer):
                     mouse_tab = self.GetIdxFromWindow(wnd)
                     page = self._pages[mouse_tab]
                     tab_button = self._tab_close_buttons[mouse_tab]
-                    self._drag_image = TabDragImage(self, page, tab_button.cur_state, self._art)
+                    self._drag_image = TabDragImage(self, page, tab_button, self._art)
 
                     if self.HasCapture():
                         self.ReleaseMouse()

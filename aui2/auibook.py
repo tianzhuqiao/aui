@@ -377,6 +377,7 @@ class AuiTabContainerButton(object):
         self.bitmap = wx.NullBitmap                       # button's hover bitmap
         self.dis_bitmap = wx.NullBitmap                   # button's disabled bitmap
         self.rect = wx.Rect()                             # button's hit rectangle
+        self.order = 99                                   # the button display order
 
 
 # ----------------------------------------------------------------------
@@ -931,10 +932,10 @@ class AuiTabContainer(object):
         self._rect = wx.Rect()
         self._auiNotebook = auiNotebook
 
-        self.AddButton(AUI_BUTTON_LEFT, wx.LEFT, name="Scroll Left")
-        self.AddButton(AUI_BUTTON_RIGHT, wx.RIGHT, name="Scroll Right")
-        self.AddButton(AUI_BUTTON_WINDOWLIST, wx.RIGHT, name="Window List")
-        self.AddButton(AUI_BUTTON_CLOSE, wx.RIGHT, name="Close")
+        self.AddButton(AUI_BUTTON_LEFT, wx.LEFT, name="Scroll Left", order=0)
+        self.AddButton(AUI_BUTTON_RIGHT, wx.RIGHT, name="Scroll Right", order=0)
+        self.AddButton(AUI_BUTTON_WINDOWLIST, wx.RIGHT, name="Window List", order=0)
+        self.AddButton(AUI_BUTTON_CLOSE_TAB, wx.RIGHT, name="Close", order=0)
 
 
     def SetArtProvider(self, art):
@@ -1005,17 +1006,17 @@ class AuiTabContainer(object):
         self.RemoveButton(AUI_BUTTON_LEFT)
         self.RemoveButton(AUI_BUTTON_RIGHT)
         self.RemoveButton(AUI_BUTTON_WINDOWLIST)
-        self.RemoveButton(AUI_BUTTON_CLOSE)
+        self.RemoveButton(AUI_BUTTON_CLOSE_TAB)
 
         if agwFlags & AUI_NB_SCROLL_BUTTONS:
-            self.AddButton(AUI_BUTTON_LEFT, wx.LEFT, name="Scroll Left")
-            self.AddButton(AUI_BUTTON_RIGHT, wx.RIGHT, name="Scroll Right")
+            self.AddButton(AUI_BUTTON_LEFT, wx.LEFT, name="Scroll Left", order=0)
+            self.AddButton(AUI_BUTTON_RIGHT, wx.RIGHT, name="Scroll Right", order=0)
 
         if agwFlags & AUI_NB_WINDOWLIST_BUTTON:
-            self.AddButton(AUI_BUTTON_WINDOWLIST, wx.RIGHT, name="Window List")
+            self.AddButton(AUI_BUTTON_WINDOWLIST, wx.RIGHT, name="Window List", order=0)
 
         if agwFlags & AUI_NB_CLOSE_BUTTON:
-            self.AddButton(AUI_BUTTON_CLOSE, wx.RIGHT, name="Close")
+            self.AddButton(AUI_BUTTON_CLOSE_TAB, wx.RIGHT, name="Close", order=0)
 
         if self._art:
             self._art.SetAGWFlags(self._agwFlags)
@@ -1350,9 +1351,13 @@ class AuiTabContainer(object):
             if self.GetEnabled(indx) and not self.GetHidden(indx):
                 return indx
 
+        # find the 1st page that is visible
+        for indx in range(0, self.GetPageCount()):
+            if not self.GetHidden(indx):
+                return indx
         return 0
 
-    def AddButton(self, id, location, normal_bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap, name=""):
+    def AddButton(self, id, location, normal_bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap, name="", order=99):
         """
         Adds a button in the tab area.
 
@@ -1361,7 +1366,7 @@ class AuiTabContainer(object):
          ==============================  =================================
          Button Identifier               Description
          ==============================  =================================
-         ``AUI_BUTTON_CLOSE``            Shows a close button on the tab area
+         ``AUI_BUTTON_CLOSE_TAB``            Shows a close button on the tab area
          ``AUI_BUTTON_WINDOWLIST``       Shows a window list button on the tab area
          ``AUI_BUTTON_LEFT``             Shows a left button on the tab area
          ``AUI_BUTTON_RIGHT``            Shows a right button on the tab area
@@ -1380,8 +1385,11 @@ class AuiTabContainer(object):
         button.dis_bitmap = disabled_bitmap
         button.location = location
         button.cur_state = AUI_BUTTON_STATE_NORMAL
+        button.order = order
 
         self._buttons.append(button)
+
+        self._buttons = sorted(self._buttons, key=lambda x: x.order)
 
 
     def CloneButtons(self):
@@ -1393,7 +1401,7 @@ class AuiTabContainer(object):
         :note: Standard buttons for :class:`AuiNotebook` are not cloned, only custom ones.
         """
 
-        singleton_list = [AUI_BUTTON_CLOSE, AUI_BUTTON_WINDOWLIST, AUI_BUTTON_LEFT, AUI_BUTTON_RIGHT]
+        singleton_list = [AUI_BUTTON_CLOSE_TAB, AUI_BUTTON_WINDOWLIST, AUI_BUTTON_LEFT, AUI_BUTTON_RIGHT]
         clones = []
 
         for button in self._buttons:
@@ -1595,9 +1603,7 @@ class AuiTabContainer(object):
             if button.cur_state & AUI_BUTTON_STATE_HIDDEN:
                 continue
 
-            button_rect = wx.Rect(*self._rect)
-            button_rect.SetY(1)
-            button_rect.SetWidth(offset)
+            button_rect = wx.Rect(self._rect.x, 1, offset, self._rect.height-2)
 
             button.rect = self._art.DrawButton(dc, wnd, button_rect, button, wx.RIGHT)
 
@@ -1615,7 +1621,7 @@ class AuiTabContainer(object):
             if button.cur_state & AUI_BUTTON_STATE_HIDDEN:
                 continue
 
-            button_rect = wx.Rect(offset, 1, 1000, self._rect.height)
+            button_rect = wx.Rect(offset, 1, 1000, self._rect.height-2)
 
             button.rect = self._art.DrawButton(dc, wnd, button_rect, button, wx.LEFT)
 
@@ -1669,7 +1675,7 @@ class AuiTabContainer(object):
             if (self._agwFlags & AUI_NB_CLOSE_ON_ALL_TABS and page.hasCloseButton) or \
                (self._agwFlags & AUI_NB_CLOSE_ON_ACTIVE_TAB and page.active and page.hasCloseButton):
 
-                if tab_button.cur_state == AUI_BUTTON_STATE_HIDDEN:
+                if tab_button.cur_state & AUI_BUTTON_STATE_HIDDEN:
 
                     tab_button.id = AUI_BUTTON_CLOSE
                     tab_button.cur_state = AUI_BUTTON_STATE_NORMAL
@@ -1678,6 +1684,12 @@ class AuiTabContainer(object):
             else:
 
                 tab_button.cur_state = AUI_BUTTON_STATE_HIDDEN
+
+            # button and page share the same enable/disable state
+            if not page.enabled:
+                tab_button.cur_state |= AUI_BUTTON_STATE_DISABLED
+            else:
+                tab_button.cur_state &= ~AUI_BUTTON_STATE_DISABLED
 
             rect.x = offset
             rect.width = self._rect.width - right_buttons_width - offset - 2
@@ -4340,7 +4352,9 @@ class AuiNotebook(wx.Panel):
         #Update page access time
         self._tabs.GetPages()[new_page].access_time = datetime.datetime.now()
 
-        if not wnd or not self.GetEnabled(new_page):
+        if not wnd or (not self.GetEnabled(new_page) and new_page != self.FindNextActiveTab(new_page)):
+            # if new_page is disabled, and there is some page enabled, not allow
+            # to switch to new_page
             return self._curpage
 
         # don't change the page unless necessary
@@ -4415,7 +4429,8 @@ class AuiNotebook(wx.Panel):
         if idx == wx.NOT_FOUND:
             raise Exception("invalid notebook page")
 
-        if not self.GetEnabled(idx):
+        if not self.GetEnabled(idx) and idx != self.FindNextActiveTab(idx):
+            # if idx is disabled and there is not tab that is enabled
             return
 
         # since a tab was clicked, let the parent know that we received
@@ -5715,7 +5730,7 @@ class AuiNotebook(wx.Panel):
         tabs = event.GetEventObject()
         button_id = event.GetInt()
 
-        if button_id == AUI_BUTTON_CLOSE:
+        if button_id in [AUI_BUTTON_CLOSE, AUI_BUTTON_CLOSE_TAB]:
 
             selection = event.GetSelection()
 
@@ -6061,7 +6076,7 @@ class AuiNotebook(wx.Panel):
          ==============================  =================================
          Button Identifier               Description
          ==============================  =================================
-         ``AUI_BUTTON_CLOSE``            Shows a close button on the tab area
+         ``AUI_BUTTON_CLOSE_TAB``            Shows a close button on the tab area
          ``AUI_BUTTON_WINDOWLIST``       Shows a window list button on the tab area
          ``AUI_BUTTON_LEFT``             Shows a left button on the tab area
          ``AUI_BUTTON_RIGHT``            Shows a right button on the tab area

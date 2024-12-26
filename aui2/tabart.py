@@ -169,6 +169,12 @@ class AuiDefaultTabArt(object):
             self._hover_close_bmp = self._active_close_bmp
             self._pressed_close_bmp = self._active_close_bmp
 
+        if forced or self._active_close_tab_bmp is None or \
+            scale_factor != self._active_close_tab_bmp.GetScaleFactor():
+
+            self._active_close_tab_bmp = svg_to_bitmap(close_svg, clr_active, win=win)
+            self._disabled_close_tab_bmp = svg_to_bitmap(close_svg, clr_inactive, win=win)
+
         if forced or self._active_left_bmp is None or \
             scale_factor != self._active_left_bmp.GetScaleFactor():
 
@@ -219,8 +225,13 @@ class AuiDefaultTabArt(object):
         disabled_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         bk = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
 
+        # close button on tab
         self._active_close_bmp = None
         self._disabled_close_bmp = None
+
+        # close button on AuiNotebook
+        self._active_close_tab_bmp = None
+        self._disabled_close_tab_bmp = None
 
         self._hover_close_bmp = None
         self._pressed_close_bmp = None
@@ -556,7 +567,7 @@ class AuiDefaultTabArt(object):
         text_offset = tab_x + self._tab_padding
         close_button_width = 0
 
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
@@ -611,7 +622,7 @@ class AuiDefaultTabArt(object):
         # draw tab text
         rectx, recty, dummy = dc.GetFullMultiLineTextExtent(draw_text)
         dc.DrawLabel(draw_text, wx.Rect(text_offset, ypos, rectx, recty))
-
+        rx_text = wx.Rect(text_offset, ypos, rectx, recty)
         # draw focus rectangle
         if (agwFlags & AUI_NB_NO_TAB_FOCUS) == 0:
             self.DrawFocusRectangle(dc, page, wnd, draw_text, offset_focus, bitmap_offset, drawn_tab_yoff, drawn_tab_height, rectx, recty)
@@ -620,13 +631,13 @@ class AuiDefaultTabArt(object):
 
         self._reloadButtonBitmap(win=wnd)
         # draw close button if necessary
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
 
             bmp = self._disabled_close_bmp
 
-            if close_button_state == AUI_BUTTON_STATE_HOVER:
+            if close_button_state & AUI_BUTTON_STATE_HOVER:
                 bmp = self._hover_close_bmp
-            elif close_button_state == AUI_BUTTON_STATE_PRESSED:
+            elif close_button_state & AUI_BUTTON_STATE_PRESSED:
                 bmp = self._pressed_close_bmp
 
             shift = (agwFlags & AUI_NB_BOTTOM and [1] or [0])[0]
@@ -636,11 +647,11 @@ class AuiDefaultTabArt(object):
                 # more close to the edge. And make the close button slightly
                 # bigger to show the background rectangle when active
                 rect = wx.Rect(tab_x + self._tab_padding//2,
-                               tab_y + (tab_height - close_button_width - 4)//2,
+                               ypos + (recty + 1)//2  - (close_button_width + 4)//2,
                                close_button_width + 4, close_button_width + 4)
             else:
                 rect = wx.Rect(tab_x + tab_width - close_button_width - self._tab_padding//2,
-                               tab_y + (tab_height - close_button_width - 4) //2,
+                               ypos + (recty + 1)//2  - (close_button_width + 4)//2,
                                close_button_width + 4, close_button_width + 4)
 
             self.DrawButton(dc, wnd, rect, close_button, wx.LEFT, gap=0)
@@ -664,18 +675,24 @@ class AuiDefaultTabArt(object):
         """
 
         if bitmap_id == AUI_BUTTON_CLOSE:
-            if button_state == AUI_BUTTON_STATE_NORMAL:
+            if button_state & AUI_BUTTON_STATE_NORMAL:
                 self._active_close_bmp = bmp
                 self._hover_close_bmp = self._active_close_bmp
                 self._pressed_close_bmp = self._active_close_bmp
                 self._disabled_close_bmp = self._active_close_bmp
 
-            elif button_state == AUI_BUTTON_STATE_HOVER:
+            elif button_state & AUI_BUTTON_STATE_HOVER:
                 self._hover_close_bmp = bmp
-            elif button_state == AUI_BUTTON_STATE_PRESSED:
+            elif button_state & AUI_BUTTON_STATE_PRESSED:
                 self._pressed_close_bmp = bmp
             else:
                 self._disabled_close_bmp = bmp
+
+        elif bitmap_id == AUI_BUTTON_CLOSE_TAB:
+            if button_state & AUI_BUTTON_STATE_DISABLED:
+                self._disabled_close_tab_bmp = bmp
+            else:
+                self._active_close_tab_bmp = bmp
 
         elif bitmap_id == AUI_BUTTON_LEFT:
             if button_state & AUI_BUTTON_STATE_DISABLED:
@@ -726,7 +743,7 @@ class AuiDefaultTabArt(object):
         tab_height = measured_texty
 
         # if the close button is showing, add space for it
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
             tab_width += int(self._active_close_bmp.GetLogicalWidth()) + self._padding
 
         # if there's a bitmap, add space for it
@@ -751,7 +768,7 @@ class AuiDefaultTabArt(object):
         return (tab_width, tab_height), x_extent
 
 
-    def DrawButton(self, dc, wnd, in_rect, button, orientation, gap=4):
+    def DrawButton(self, dc, wnd, in_rect, button, orientation, gap=8):
         """
         Draws a button on the tab or on the tab area, depending on the button identifier.
 
@@ -763,7 +780,8 @@ class AuiDefaultTabArt(object):
         """
 
         bitmap_id, button_state = button.id, button.cur_state
-        active = button.cur_state in [AUI_BUTTON_STATE_HOVER, AUI_BUTTON_STATE_PRESSED]
+        active = (button_state & AUI_BUTTON_STATE_DISABLED == 0) and \
+                 (button_state & (AUI_BUTTON_STATE_HOVER | AUI_BUTTON_STATE_PRESSED))
         self._reloadButtonBitmap(win=wnd)
         if bitmap_id == AUI_BUTTON_CLOSE:
             if button_state & AUI_BUTTON_STATE_DISABLED:
@@ -774,6 +792,12 @@ class AuiDefaultTabArt(object):
                 bmp = self._pressed_close_bmp
             else:
                 bmp = self._active_close_bmp
+
+        elif bitmap_id == AUI_BUTTON_CLOSE_TAB:
+            if button_state & AUI_BUTTON_STATE_DISABLED:
+                bmp = self._disabled_close_tab_bmp
+            else:
+                bmp = self._active_close_tab_bmp
 
         elif bitmap_id == AUI_BUTTON_LEFT:
             if button_state & AUI_BUTTON_STATE_DISABLED:
@@ -1275,7 +1299,7 @@ class AuiSimpleTabArt(object):
 
         close_button_width = 0
 
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
 
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
@@ -1343,7 +1367,7 @@ class AuiSimpleTabArt(object):
 
         out_button_rect = wx.Rect()
         # draw close button if necessary
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
 
             if page.active:
                 bmp = self._active_close_bmp
@@ -1381,11 +1405,11 @@ class AuiSimpleTabArt(object):
 
         rect = wx.Rect(*_rect)
 
-        if button_state == AUI_BUTTON_STATE_PRESSED:
+        if button_state & AUI_BUTTON_STATE_PRESSED:
             rect.x += 1
             rect.y += 1
 
-        if button_state in [AUI_BUTTON_STATE_HOVER, AUI_BUTTON_STATE_PRESSED]:
+        if button_state & (AUI_BUTTON_STATE_HOVER | AUI_BUTTON_STATE_PRESSED):
             dc.SetBrush(wx.Brush(StepColour(bkcolour, 120)))
             dc.SetPen(wx.Pen(StepColour(bkcolour, 75)))
 
@@ -1421,7 +1445,7 @@ class AuiSimpleTabArt(object):
         tab_height = measured_texty + 4
         tab_width = measured_textx + tab_height + 5
 
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
             tab_width += int(self._active_close_bmp.GetLogicalWidth())
 
         if self._agwFlags & AUI_NB_TAB_FIXED_WIDTH:
@@ -1449,7 +1473,7 @@ class AuiSimpleTabArt(object):
 
         bitmap_id, button_state = button.id, button.cur_state
 
-        if bitmap_id == AUI_BUTTON_CLOSE:
+        if bitmap_id in [AUI_BUTTON_CLOSE, AUI_BUTTON_CLOSE_TAB]:
             if button_state & AUI_BUTTON_STATE_DISABLED:
                 bmp = self._disabled_close_bmp
             else:
@@ -1629,16 +1653,16 @@ class AuiSimpleTabArt(object):
         :param wx.Bitmap `bmp`: the custom bitmap to use for the button.
         """
 
-        if bitmap_id == AUI_BUTTON_CLOSE:
-            if button_state == AUI_BUTTON_STATE_NORMAL:
+        if bitmap_id in [AUI_BUTTON_CLOSE, AUI_BUTTON_CLOSE_TAB]:
+            if button_state & AUI_BUTTON_STATE_NORMAL:
                 self._active_close_bmp = bmp
                 self._hover_close_bmp = self._active_close_bmp
                 self._pressed_close_bmp = self._active_close_bmp
                 self._disabled_close_bmp = self._active_close_bmp
 
-            elif button_state == AUI_BUTTON_STATE_HOVER:
+            elif button_state & AUI_BUTTON_STATE_HOVER:
                 self._hover_close_bmp = bmp
-            elif button_state == AUI_BUTTON_STATE_PRESSED:
+            elif button_state & AUI_BUTTON_STATE_PRESSED:
                 self._pressed_close_bmp = bmp
             else:
                 self._disabled_close_bmp = bmp
@@ -1772,7 +1796,7 @@ class VC71TabArt(AuiDefaultTabArt):
         text_offset = tab_x + 8
         close_button_width = 0
 
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 text_offset += close_button_width - 5
@@ -1853,14 +1877,14 @@ class VC71TabArt(AuiDefaultTabArt):
                                     drawn_tab_height+shift, rectx, recty)
 
         # draw 'x' on tab (if enabled)
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
 
             bmp = self._disabled_close_bmp
 
-            if close_button_state == AUI_BUTTON_STATE_HOVER:
+            if close_button_state & AUI_BUTTON_STATE_HOVER:
                 bmp = self._hover_close_bmp
-            elif close_button_state == AUI_BUTTON_STATE_PRESSED:
+            elif close_button_state & AUI_BUTTON_STATE_PRESSED:
                 bmp = self._pressed_close_bmp
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
@@ -2009,7 +2033,7 @@ class FF2TabArt(AuiDefaultTabArt):
 
         text_offset = tab_x + 8
         close_button_width = 0
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 text_offset += close_button_width - 4
@@ -2091,14 +2115,14 @@ class FF2TabArt(AuiDefaultTabArt):
 
         out_button_rect = wx.Rect()
         # draw 'x' on tab (if enabled)
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
 
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
             bmp = self._disabled_close_bmp
 
-            if close_button_state == AUI_BUTTON_STATE_HOVER:
+            if close_button_state & AUI_BUTTON_STATE_HOVER:
                 bmp = self._hover_close_bmp
-            elif close_button_state == AUI_BUTTON_STATE_PRESSED:
+            elif close_button_state & AUI_BUTTON_STATE_PRESSED:
                 bmp = self._pressed_close_bmp
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
@@ -2348,7 +2372,7 @@ class VC8TabArt(AuiDefaultTabArt):
 
         text_offset = tab_x + 20
         close_button_width = 0
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 text_offset += close_button_width
@@ -2429,14 +2453,14 @@ class VC8TabArt(AuiDefaultTabArt):
 
         out_button_rect = wx.Rect()
         # draw 'x' on tab (if enabled)
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
 
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
             bmp = self._disabled_close_bmp
 
-            if close_button_state == AUI_BUTTON_STATE_HOVER:
+            if close_button_state & AUI_BUTTON_STATE_HOVER:
                 bmp = self._hover_close_bmp
-            elif close_button_state == AUI_BUTTON_STATE_PRESSED:
+            elif close_button_state & AUI_BUTTON_STATE_PRESSED:
                 bmp = self._pressed_close_bmp
 
             if page.active:
@@ -2715,7 +2739,7 @@ class ChromeTabArt(AuiDefaultTabArt):
         text_offset = tab_x + leftw
 
         close_button_width = 0
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:
                 text_offset += close_button_width
@@ -2785,14 +2809,14 @@ class ChromeTabArt(AuiDefaultTabArt):
 
         out_button_rect = wx.Rect()
         # draw 'x' on tab (if enabled)
-        if close_button_state != AUI_BUTTON_STATE_HIDDEN:
+        if close_button_state & AUI_BUTTON_STATE_HIDDEN == 0:
 
             close_button_width = int(self._active_close_bmp.GetLogicalWidth())
             bmp = self._disabled_close_bmp
 
-            if close_button_state == AUI_BUTTON_STATE_HOVER:
+            if close_button_state & AUI_BUTTON_STATE_HOVER:
                 bmp = self._hover_close_bmp
-            elif close_button_state == AUI_BUTTON_STATE_PRESSED:
+            elif close_button_state & AUI_BUTTON_STATE_PRESSED:
                 bmp = self._pressed_close_bmp
 
             if agwFlags & AUI_NB_CLOSE_ON_TAB_LEFT:

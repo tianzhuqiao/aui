@@ -415,6 +415,8 @@ AUI_BUTTON_UP = 109
 """ Shows an up button on the pane (not implemented). """
 AUI_BUTTON_DOWN = 110
 """ Shows a down button on the pane (not implemented). """
+AUI_BUTTON_CLOSE_TAB = 111
+""" Shows a close button on the AuiNoteBook. """
 AUI_BUTTON_CUSTOM1 = 201
 """ Shows a custom button on the pane. """
 AUI_BUTTON_CUSTOM2 = 202
@@ -536,6 +538,7 @@ double_right_svg ='<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox
 
 double_right_grey_svg ='<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="{clr}" fill-opacity="{alpha}"><path d="M383-480 200-664l56-56 240 240-240 240-56-56 183-184Zm264 0L464-664l56-56 240 240-240 240-56-56 183-184Z"/></svg>'
 
+close_svg = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="{clr}" fill-opacity="{alpha}"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>'
 #----------------------------------------------------------------------
 
 down_focus_single = PyEmbeddedImage(

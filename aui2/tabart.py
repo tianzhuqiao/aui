@@ -482,6 +482,11 @@ class AuiDefaultTabArt(object):
         drawn_tab_yoff = border_points[1].y
         drawn_tab_height = border_points[0].y - border_points[1].y
 
+        if agwFlags & AUI_NB_BOTTOM:
+            drawn_tab_yoff += 1
+        else:
+            drawn_tab_yoff -= 1
+
         if page.active:
 
             # draw active tab
@@ -597,7 +602,7 @@ class AuiDefaultTabArt(object):
             draw_text = ChopText(dc, caption, tab_width - (text_offset-tab_x + self._tab_padding) - close_button_width)
 
 
-        ypos = drawn_tab_yoff + (drawn_tab_height)//2 - (texty//2) - 1
+        ypos = drawn_tab_yoff + (drawn_tab_height)//2 - (texty//2)
 
         offset_focus = text_offset
         if control:
@@ -943,7 +948,7 @@ class AuiDefaultTabArt(object):
                 controlW, controlH = page.control.GetSize()
                 max_y = max(max_y, controlH+4)
 
-        return max_y + 2
+        return max(max_y + 2, 28)
 
 
     def SetNormalFont(self, font):

@@ -1536,14 +1536,16 @@ class AuiTabContainer(object):
         buttons_width = 0
 
         for button in self._buttons:
+            # hide the scroll left/right buttons
+            if button.id in [AUI_BUTTON_LEFT, AUI_BUTTON_RIGHT]:
+                button.cur_state |= AUI_BUTTON_STATE_HIDDEN
+
             if not (button.cur_state & AUI_BUTTON_STATE_HIDDEN):
                 buttons_width += button.rect.GetWidth()
 
         total_width += buttons_width
-
-        if (total_width > self._rect.GetWidth() and page_count > 1) or self._tab_offset != 0:
-
-            # show left/right buttons
+        if total_width > self._rect.GetWidth() and page_count > 1:
+            # show scroll left/right buttons
             for button in self._buttons:
                 if button.id == AUI_BUTTON_LEFT or \
                    button.id == AUI_BUTTON_RIGHT:

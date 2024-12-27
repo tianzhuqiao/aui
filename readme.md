@@ -17,18 +17,11 @@ AUI2 is based on [wx.lib.agw.aui](https://github.com/wxWidgets/Phoenix/tree/mast
 ```bash
 $ pip install aui2
 ```
-Or add **aui2** as a submodule, e.g., in your project folder
-```bash
-$ git submodule add https://github.com/tianzhuqiao/aui.git
-$ git submodule init
-$ git submodule update
-```
+
 2. Import **aui2**
 ```python
-# Instead of using the aui in wx.lib.agw, e.g.,
-# import wx.lib.agw.aui as aui
 import aui2 as aui
 ```
 ### Screenshots
-<img src="https://github.com/tianzhuqiao/aui/raw/main/images/light.png"  width="912"></img>
-<img src="https://github.com/tianzhuqiao/aui/raw/main/images/dark.png"  width="912"></img>
+<img src="./images/light.png"  width="912"></img>
+<img src="./images/dark.png"  width="912"></img>

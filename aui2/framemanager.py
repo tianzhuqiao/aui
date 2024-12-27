@@ -5050,7 +5050,7 @@ class AuiManager(wx.EvtHandler):
         :param `art`: a tab art provider.
         """
 
-        for nb in self._notebooks:
+        for _, nb in self._notebooks.items():
             nb.SetArtProvider(art.Clone())
             nb.Refresh()
             nb.Update()
@@ -5100,7 +5100,7 @@ class AuiManager(wx.EvtHandler):
 
         """
 
-        for nb in self._notebooks:
+        for _, nb in self._notebooks.items():
             nb.SetAGWWindowStyleFlag(agwStyle)
             nb.Refresh()
             nb.Update()

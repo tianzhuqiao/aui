@@ -654,12 +654,10 @@ class TabDragImage(wx.DragImage):
         memory.SetBackgroundMode(wx.TRANSPARENT)
         memory.Clear()
 
+        tabArt.DrawBackground(memory, notebook, rect)
+
         paint_control = wx.Platform != "__WXMAC__"
         tabArt.DrawTab(memory, notebook, page, rect, button, paint_control=paint_control)
-
-        memory.SetBrush(wx.TRANSPARENT_BRUSH)
-        memory.SetPen(wx.BLACK_PEN)
-        memory.DrawRoundedRectangle(0, 0, tab_width+1, tab_height+1, 2)
 
         memory.SelectObject(wx.NullBitmap)
 

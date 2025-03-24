@@ -125,6 +125,8 @@ class AuiDefaultTabArt(object):
         self._fixed_tab_width = 100
         self._tab_ctrl_height = 0
         self._buttonRect = wx.Rect()
+        self._min_tab_width = 50
+        self._max_tab_width = 300
 
         # left and right padding for the tab, e.g.,
         # tab width = pad + label width + pad
@@ -313,6 +315,9 @@ class AuiDefaultTabArt(object):
 
         return self._agwFlags
 
+    def SetMinMaxWidth(self, min_width, max_width):
+        self._min_tab_width = min(min_width, max_width)
+        self._max_tab_width = max(min_width, max_width)
 
     def SetSizingInfo(self, tab_ctrl_size, tab_count, minMaxTabWidth):
         """
@@ -764,6 +769,8 @@ class AuiDefaultTabArt(object):
         agwFlags = self.GetAGWFlags()
         if agwFlags & AUI_NB_TAB_FIXED_WIDTH:
             tab_width = self._fixed_tab_width
+
+        tab_width = max(min(tab_width, self._max_tab_width), self._min_tab_width)
 
         if control:
             tab_width += control.GetSize().GetWidth() + self._padding
@@ -1783,7 +1790,7 @@ class VC71TabArt(AuiDefaultTabArt):
             blackLineY2 = tab_height - 5
             dc.DrawLine(tab_x + tab_width, blackLineY1, tab_x + tab_width, blackLineY2)
 
-        border_points = [0, 0]
+        border_points = [wx.Point(), wx.Point()]
 
         if agwFlags & AUI_NB_BOTTOM:
 
